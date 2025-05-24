@@ -6,36 +6,33 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, loginAsGuest, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    // Simulate login
-    setTimeout(() => {
-      // For demo purposes, accept any email/password
-      if (email && password) {
-        // Store in localStorage for persistent session
-        localStorage.setItem("user", JSON.stringify({ email, role: "editor", name: "Demo User" }));
-        toast.success("Login bem-sucedido!");
-        navigate("/dashboard");
-      } else {
-        toast.error("Por favor, preencha todos os campos");
-      }
-      setIsLoading(false);
-    }, 1000);
+    if (!email || !password) {
+      toast.error("Por favor, preencha todos os campos");
+      return;
+    }
+    
+    try {
+      await login(email, password);
+    } catch (error) {
+      // Error is handled in the auth context
+      console.error("Login failed:", error);
+    }
   };
 
   const handleGuestLogin = () => {
-    localStorage.setItem("user", JSON.stringify({ email: "guest@synks.com", role: "viewer", name: "Convidado" }));
-    toast.success("Login como convidado");
-    navigate("/dashboard");
+    loginAsGuest();
   };
 
   return (
@@ -57,6 +54,7 @@ const Login = () => {
                 placeholder="seu@email.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -72,10 +70,16 @@ const Login = () => {
                 placeholder="••••••••" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Entrando..." : "Entrar"}
+              {isLoading ? 
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Entrando...
+                </> : 
+                "Entrar"}
             </Button>
           </form>
           <div className="mt-4">
@@ -83,6 +87,7 @@ const Login = () => {
               variant="outline" 
               className="w-full" 
               onClick={handleGuestLogin}
+              disabled={isLoading}
             >
               Entrar como Convidado
             </Button>

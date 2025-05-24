@@ -1,21 +1,22 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const { signup, isLoading } = useAuth();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name || !email || !password) {
@@ -28,16 +29,12 @@ const Register = () => {
       return;
     }
     
-    setIsLoading(true);
-    
-    // Simulate registration
-    setTimeout(() => {
-      // Store in localStorage for demo purposes
-      localStorage.setItem("user", JSON.stringify({ email, name, role: "editor" }));
-      toast.success("Cadastro realizado com sucesso!");
-      navigate("/dashboard");
-      setIsLoading(false);
-    }, 1000);
+    try {
+      await signup(email, password, name);
+    } catch (error) {
+      // Error is handled in the auth context
+      console.error("Registration failed:", error);
+    }
   };
 
   return (
@@ -58,6 +55,7 @@ const Register = () => {
                 placeholder="Seu nome" 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -68,6 +66,7 @@ const Register = () => {
                 placeholder="seu@email.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -78,6 +77,7 @@ const Register = () => {
                 placeholder="••••••••" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -88,10 +88,16 @@ const Register = () => {
                 placeholder="••••••••" 
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Cadastrando..." : "Cadastrar"}
+              {isLoading ? 
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cadastrando...
+                </> : 
+                "Cadastrar"}
             </Button>
           </form>
           <div className="mt-4 text-center">
