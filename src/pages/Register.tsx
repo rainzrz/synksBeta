@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, Code } from "lucide-react";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -38,28 +38,35 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-violet-600 to-blue-700 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-saas-black to-saas-black-light p-4">
+      <Card className="w-full max-w-md bg-saas-black-light border-saas-gray/20">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Criar conta</CardTitle>
-          <CardDescription className="text-center">
+          <div className="flex justify-center mb-2">
+            <div className="flex items-center gap-2">
+              <Code className="h-6 w-6 text-saas-red" />
+              <span className="text-2xl font-bold">Synks</span>
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold text-center text-white">Criar conta</CardTitle>
+          <CardDescription className="text-center text-gray-400">
             Preencha os dados abaixo para criar sua conta no Synks
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
+              <Label htmlFor="name" className="text-gray-300">Nome</Label>
               <Input 
                 id="name" 
                 placeholder="Seu nome" 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={isLoading}
+                className="bg-saas-black border-saas-gray/20 text-white"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-gray-300">Email</Label>
               <Input 
                 id="email" 
                 type="email" 
@@ -67,10 +74,11 @@ const Register = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
+                className="bg-saas-black border-saas-gray/20 text-white"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password" className="text-gray-300">Senha</Label>
               <Input 
                 id="password" 
                 type="password" 
@@ -78,10 +86,11 @@ const Register = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
+                className="bg-saas-black border-saas-gray/20 text-white"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+              <Label htmlFor="confirmPassword" className="text-gray-300">Confirmar Senha</Label>
               <Input 
                 id="confirmPassword" 
                 type="password" 
@@ -89,9 +98,14 @@ const Register = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={isLoading}
+                className="bg-saas-black border-saas-gray/20 text-white"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              className="w-full bg-saas-red hover:bg-saas-red-dark text-white" 
+              disabled={isLoading}
+            >
               {isLoading ? 
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -101,15 +115,15 @@ const Register = () => {
             </Button>
           </form>
           <div className="mt-4 text-center">
-            <p>Já tem uma conta? {" "}
-              <Link to="/login" className="text-blue-600 hover:underline">
+            <p className="text-gray-400">Já tem uma conta? {" "}
+              <Link to="/login" className="text-saas-red hover:underline">
                 Faça login
               </Link>
             </p>
           </div>
         </CardContent>
         <CardFooter className="flex justify-center">
-          <Link to="/" className="text-sm text-gray-500 hover:underline">
+          <Link to="/" className="text-sm text-gray-500 hover:text-saas-red">
             Voltar para página inicial
           </Link>
         </CardFooter>

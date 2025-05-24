@@ -7,13 +7,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, Code } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login, loginAsGuest, isLoading } = useAuth();
-  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,18 +35,24 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-violet-600 to-blue-700 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-saas-black to-saas-black-light p-4">
+      <Card className="w-full max-w-md bg-saas-black-light border-saas-gray/20">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Login</CardTitle>
-          <CardDescription className="text-center">
+          <div className="flex justify-center mb-2">
+            <div className="flex items-center gap-2">
+              <Code className="h-6 w-6 text-saas-red" />
+              <span className="text-2xl font-bold">Synks</span>
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold text-center text-white">Login</CardTitle>
+          <CardDescription className="text-center text-gray-400">
             Entre com suas credenciais para acessar sua conta
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-gray-300">Email</Label>
               <Input 
                 id="email" 
                 type="email" 
@@ -55,12 +60,13 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
+                className="bg-saas-black border-saas-gray/20 text-white"
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Senha</Label>
-                <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+                <Label htmlFor="password" className="text-gray-300">Senha</Label>
+                <Link to="/forgot-password" className="text-sm text-saas-red hover:underline">
                   Esqueceu a senha?
                 </Link>
               </div>
@@ -71,9 +77,10 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
+                className="bg-saas-black border-saas-gray/20 text-white"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-saas-red hover:bg-saas-red-dark text-white" disabled={isLoading}>
               {isLoading ? 
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -85,7 +92,7 @@ const Login = () => {
           <div className="mt-4">
             <Button 
               variant="outline" 
-              className="w-full" 
+              className="w-full border-saas-red text-white hover:bg-saas-red/10" 
               onClick={handleGuestLogin}
               disabled={isLoading}
             >
@@ -93,15 +100,15 @@ const Login = () => {
             </Button>
           </div>
           <div className="mt-4 text-center">
-            <p>Não tem uma conta? {" "}
-              <Link to="/register" className="text-blue-600 hover:underline">
+            <p className="text-gray-400">Não tem uma conta? {" "}
+              <Link to="/register" className="text-saas-red hover:underline">
                 Cadastre-se
               </Link>
             </p>
           </div>
         </CardContent>
         <CardFooter className="flex justify-center">
-          <Link to="/" className="text-sm text-gray-500 hover:underline">
+          <Link to="/" className="text-sm text-gray-500 hover:text-saas-red">
             Voltar para página inicial
           </Link>
         </CardFooter>
