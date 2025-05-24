@@ -19,7 +19,6 @@ const Landing = () => {
           <div className="hidden md:flex space-x-8">
             <a href="#features" className="text-gray-300 hover:text-white transition-colors">Features</a>
             <a href="#solutions" className="text-gray-300 hover:text-white transition-colors">Soluções</a>
-            <a href="#pricing" className="text-gray-300 hover:text-white transition-colors">Preços</a>
             <a href="#contact" className="text-gray-300 hover:text-white transition-colors">Contato</a>
           </div>
           <div className="space-x-3">
@@ -54,18 +53,6 @@ const Landing = () => {
         <Button size="lg" className="bg-saas-red hover:bg-saas-red-dark text-white px-8 py-6 text-lg rounded-md animate-fade-in">
           Comece gratuitamente <ArrowRight className="ml-2" />
         </Button>
-
-        {/* Dashboard Preview */}
-        <div className="mt-16 relative animate-fade-in">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-saas-red to-saas-red-dark rounded-lg blur opacity-25"></div>
-          <div className="relative bg-saas-black-light rounded-lg overflow-hidden border border-saas-gray/20 shadow-2xl">
-            <img
-              src="https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7"
-              alt="Dashboard Synks"
-              className="w-full rounded-lg"
-            />
-          </div>
-        </div>
       </div>
 
       {/* Stats Section */}
@@ -137,23 +124,13 @@ const Landing = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-saas-red to-saas-red-dark rounded-lg blur opacity-25"></div>
-              <div className="relative bg-saas-black rounded-lg overflow-hidden border border-saas-gray/20">
-                <img
-                  src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5"
-                  alt="Analytics Dashboard"
-                  className="w-full rounded-lg"
-                />
-              </div>
-            </div>
+          <div className="grid md:grid-cols-1 gap-12 items-center">
             <div>
-              <h3 className="text-3xl font-bold mb-6">Dashboard Intuitivo</h3>
-              <p className="text-gray-400 mb-6 text-lg">
+              <h3 className="text-3xl font-bold mb-6 text-center">Dashboard Intuitivo</h3>
+              <p className="text-gray-400 mb-6 text-lg text-center">
                 Visualize todos os dados importantes em um único lugar com nosso dashboard de alta performance.
               </p>
-              <ul className="space-y-4">
+              <ul className="space-y-4 max-w-2xl mx-auto">
                 <li className="flex items-start">
                   <CheckCircle className="h-6 w-6 text-saas-red mr-3 mt-0.5 flex-shrink-0" />
                   <span className="text-gray-300">Visualização em tempo real de métricas críticas</span>
@@ -171,125 +148,11 @@ const Landing = () => {
                   <span className="text-gray-300">Integração com mais de 50 plataformas</span>
                 </li>
               </ul>
-              <Button className="mt-8 bg-saas-red hover:bg-saas-red-dark text-white">
-                Saiba mais
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Pricing Section */}
-      <div className="py-24" id="pricing">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Preços transparentes</h2>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Escolha o plano ideal para seu negócio sem surpresas ou taxas ocultas.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-saas-black-light p-8 rounded-lg border border-saas-gray/20 flex flex-col h-full card-hover">
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-2">Starter</h3>
-                <div className="text-4xl font-bold mb-2">R$49<span className="text-lg font-normal text-gray-400">/mês</span></div>
-                <p className="text-gray-400">Perfeito para pequenos negócios</p>
+              <div className="text-center mt-8">
+                <Button className="bg-saas-red hover:bg-saas-red-dark text-white">
+                  Saiba mais
+                </Button>
               </div>
-              <ul className="space-y-3 mb-8 flex-grow">
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>5 projetos</span>
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>50.000 requisições/mês</span>
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>Monitoramento básico</span>
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>Email support</span>
-                </li>
-              </ul>
-              <Button variant="outline" className="w-full border-saas-red text-white hover:bg-saas-red hover:text-white">
-                Começar
-              </Button>
-            </div>
-            
-            <div className="bg-saas-black-light p-8 rounded-lg border border-saas-red flex flex-col h-full relative card-hover">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-saas-red text-white text-xs font-bold py-1 px-4 rounded-full">
-                MAIS POPULAR
-              </div>
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-2">Professional</h3>
-                <div className="text-4xl font-bold mb-2">R$99<span className="text-lg font-normal text-gray-400">/mês</span></div>
-                <p className="text-gray-400">Ideal para empresas em crescimento</p>
-              </div>
-              <ul className="space-y-3 mb-8 flex-grow">
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>20 projetos</span>
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>500.000 requisições/mês</span>
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>Monitoramento avançado</span>
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>Suporte prioritário</span>
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>Dashboard personalizado</span>
-                </li>
-              </ul>
-              <Button className="w-full bg-saas-red text-white hover:bg-saas-red-dark">
-                Começar
-              </Button>
-            </div>
-            
-            <div className="bg-saas-black-light p-8 rounded-lg border border-saas-gray/20 flex flex-col h-full card-hover">
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-2">Enterprise</h3>
-                <div className="text-4xl font-bold mb-2">R$299<span className="text-lg font-normal text-gray-400">/mês</span></div>
-                <p className="text-gray-400">Para grandes corporações</p>
-              </div>
-              <ul className="space-y-3 mb-8 flex-grow">
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>Projetos ilimitados</span>
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>Requisições ilimitadas</span>
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>Monitoramento premium</span>
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>Suporte 24/7</span>
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>API dedicada</span>
-                </li>
-                <li className="flex items-center text-gray-300">
-                  <CheckCircle className="h-5 w-5 text-saas-red mr-3 flex-shrink-0" />
-                  <span>Gerente de conta</span>
-                </li>
-              </ul>
-              <Button variant="outline" className="w-full border-saas-red text-white hover:bg-saas-red hover:text-white">
-                Contato
-              </Button>
             </div>
           </div>
         </div>
@@ -328,7 +191,6 @@ const Landing = () => {
               <ul className="space-y-2">
                 <li><a href="#" className="text-gray-400 hover:text-saas-red transition-colors">Features</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-saas-red transition-colors">Integrações</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-saas-red transition-colors">Preços</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-saas-red transition-colors">FAQ</a></li>
               </ul>
             </div>
