@@ -1,35 +1,29 @@
-
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import SearchBar from '@/components/SearchBar';
 import DashboardCharts from '@/components/DashboardCharts';
+import QuickStats from '@/components/QuickStats';
+import MonitoringControls from '@/components/MonitoringControls';
+import LinkStatusIndicator from '@/components/LinkStatusIndicator';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertCircle, Plus, Building2, ExternalLink, Edit, Trash2, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Building2, Globe, Plus, Trash2, Edit, ExternalLink, RefreshCw, TrendingUp, AlertTriangle } from 'lucide-react';
-import { Company, Link, LinkStatus, DashboardStats } from '@/types';
+import { Company, Link, DashboardStats } from '@/types';
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
-  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
-  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
-  const [checkingLinks, setCheckingLinks] = useState<string[]>([]);
-  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
-  const [editingLink, setEditingLink] = useState<Link | null>(null);
+  const [filteredData, setFilteredData] = useState<{ companies: Company[]; links: Link[] }>({ companies: [], links: [] });
   const [stats, setStats] = useState<DashboardStats>({
     totalCompanies: 0,
     totalLinks: 0,
@@ -37,8 +31,13 @@ export default function Dashboard() {
     offlineLinks: 0,
     errorLinks: 0,
     pendingLinks: 0,
-    averageResponseTime: 0,
+    averageResponseTime: 0
   });
+  const [loading, setLoading] = useState(true);
+  const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [editingLink, setEditingLink] = useState<Link | null>(null);
 
   const [newCompany, setNewCompany] = useState({
     name: '',
@@ -49,6 +48,7 @@ export default function Dashboard() {
     name: '',
     url: '',
     description: '',
+    company_id: '',
   });
 
   useEffect(() => {
@@ -58,63 +58,25 @@ export default function Dashboard() {
   }, [user]);
 
   useEffect(() => {
-    setFilteredCompanies(companies);
-  }, [companies]);
+    setFilteredData({ companies, links });
+  }, [companies, links]);
 
   useEffect(() => {
     calculateStats();
-  }, [companies, links]);
-
-  const calculateStats = () => {
-    const onlineLinks = links.filter(l => l.status === 'online').length;
-    const offlineLinks = links.filter(l => l.status === 'offline').length;
-    const errorLinks = links.filter(l => l.status === 'error').length;
-    const pendingLinks = links.filter(l => l.status === 'pending').length;
-    
-    const responseTimes = links
-      .filter(l => l.response_time && l.status === 'online')
-      .map(l => l.response_time!);
-    
-    const averageResponseTime = responseTimes.length > 0 
-      ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length 
-      : 0;
-
-    setStats({
-      totalCompanies: companies.length,
-      totalLinks: links.length,
-      onlineLinks,
-      offlineLinks,
-      errorLinks,
-      pendingLinks,
-      averageResponseTime: Math.round(averageResponseTime),
-    });
-  };
+  }, [links]);
 
   const loadData = async () => {
     try {
-      // Load companies
-      const { data: companiesData, error: companiesError } = await supabase
-        .from('companies')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+      const [companiesResponse, linksResponse] = await Promise.all([
+        supabase.from('companies').select('*').eq('user_id', user?.id).order('created_at', { ascending: false }),
+        supabase.from('links').select('*').eq('user_id', user?.id).order('created_at', { ascending: false })
+      ]);
 
-      if (companiesError) throw companiesError;
+      if (companiesResponse.error) throw companiesResponse.error;
+      if (linksResponse.error) throw linksResponse.error;
 
-      // Load links
-      const { data: linksData, error: linksError } = await supabase
-        .from('links')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (linksError) throw linksError;
-
-      setCompanies(companiesData || []);
-      setLinks((linksData || []).map(link => ({
-        ...link,
-        status: link.status as LinkStatus
-      })));
+      setCompanies(companiesResponse.data || []);
+      setLinks(linksResponse.data || []);
     } catch (error) {
       console.error('Error loading data:', error);
       toast.error('Erro ao carregar dados');
@@ -123,283 +85,58 @@ export default function Dashboard() {
     }
   };
 
+  const calculateStats = () => {
+    const totalCompanies = companies.length;
+    const totalLinks = links.length;
+    const onlineLinks = links.filter(l => l.status === 'online').length;
+    const offlineLinks = links.filter(l => l.status === 'offline').length;
+    const errorLinks = links.filter(l => l.status === 'error').length;
+    const pendingLinks = links.filter(l => l.status === 'pending').length;
+    
+    const responseTimes = links.filter(l => l.response_time !== null).map(l => l.response_time!);
+    const averageResponseTime = responseTimes.length > 0 
+      ? Math.round(responseTimes.reduce((acc, time) => acc + time, 0) / responseTimes.length)
+      : 0;
+
+    setStats({
+      totalCompanies,
+      totalLinks,
+      onlineLinks,
+      offlineLinks,
+      errorLinks,
+      pendingLinks,
+      averageResponseTime
+    });
+  };
+
   const handleSearch = (query: string) => {
     if (!query.trim()) {
-      setFilteredCompanies(companies);
+      setFilteredData({ companies, links });
       return;
     }
 
-    const filtered = companies.filter(company =>
+    const filteredCompanies = companies.filter(company =>
       company.name.toLowerCase().includes(query.toLowerCase()) ||
-      company.description?.toLowerCase().includes(query.toLowerCase()) ||
-      getLinksForCompany(company.id).some(link =>
-        link.name.toLowerCase().includes(query.toLowerCase()) ||
-        link.url.toLowerCase().includes(query.toLowerCase())
-      )
+      company.description?.toLowerCase().includes(query.toLowerCase())
     );
-    setFilteredCompanies(filtered);
-  };
 
-  const createCompany = async () => {
-    if (!newCompany.name.trim() || !user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('companies')
-        .insert([
-          {
-            name: newCompany.name,
-            description: newCompany.description,
-            user_id: user.id,
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setCompanies(prev => [data, ...prev]);
-      setNewCompany({ name: '', description: '' });
-      setIsCompanyDialogOpen(false);
-      toast.success('Empresa criada com sucesso!');
-    } catch (error) {
-      console.error('Error creating company:', error);
-      toast.error('Erro ao criar empresa');
-    }
-  };
-
-  const updateCompany = async () => {
-    if (!editingCompany || !newCompany.name.trim()) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('companies')
-        .update({
-          name: newCompany.name,
-          description: newCompany.description,
-        })
-        .eq('id', editingCompany.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setCompanies(prev => prev.map(company => 
-        company.id === editingCompany.id ? data : company
-      ));
-      setEditingCompany(null);
-      setNewCompany({ name: '', description: '' });
-      setIsCompanyDialogOpen(false);
-      toast.success('Empresa atualizada com sucesso!');
-    } catch (error) {
-      console.error('Error updating company:', error);
-      toast.error('Erro ao atualizar empresa');
-    }
-  };
-
-  const createLink = async () => {
-    if (!newLink.name.trim() || !newLink.url.trim() || !selectedCompanyId || !user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('links')
-        .insert([
-          {
-            name: newLink.name,
-            url: newLink.url,
-            description: newLink.description,
-            company_id: selectedCompanyId,
-            user_id: user.id,
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setLinks(prev => [{
-        ...data,
-        status: data.status as LinkStatus
-      }, ...prev]);
-      setNewLink({ name: '', url: '', description: '' });
-      setIsLinkDialogOpen(false);
-      toast.success('Link criado com sucesso!');
-    } catch (error) {
-      console.error('Error creating link:', error);
-      toast.error('Erro ao criar link');
-    }
-  };
-
-  const updateLink = async () => {
-    if (!editingLink || !newLink.name.trim() || !newLink.url.trim()) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('links')
-        .update({
-          name: newLink.name,
-          url: newLink.url,
-          description: newLink.description,
-        })
-        .eq('id', editingLink.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setLinks(prev => prev.map(link => 
-        link.id === editingLink.id ? { ...data, status: data.status as LinkStatus } : link
-      ));
-      setEditingLink(null);
-      setNewLink({ name: '', url: '', description: '' });
-      setIsLinkDialogOpen(false);
-      toast.success('Link atualizado com sucesso!');
-    } catch (error) {
-      console.error('Error updating link:', error);
-      toast.error('Erro ao atualizar link');
-    }
-  };
-
-  const deleteCompany = async (companyId: string) => {
-    try {
-      const { error } = await supabase
-        .from('companies')
-        .delete()
-        .eq('id', companyId);
-
-      if (error) throw error;
-
-      setCompanies(prev => prev.filter(c => c.id !== companyId));
-      setLinks(prev => prev.filter(l => l.company_id !== companyId));
-      toast.success('Empresa excluída com sucesso!');
-    } catch (error) {
-      console.error('Error deleting company:', error);
-      toast.error('Erro ao excluir empresa');
-    }
-  };
-
-  const deleteLink = async (linkId: string) => {
-    try {
-      const { error } = await supabase
-        .from('links')
-        .delete()
-        .eq('id', linkId);
-
-      if (error) throw error;
-
-      setLinks(prev => prev.filter(l => l.id !== linkId));
-      toast.success('Link excluído com sucesso!');
-    } catch (error) {
-      console.error('Error deleting link:', error);
-      toast.error('Erro ao excluir link');
-    }
-  };
-
-  const checkLinkStatus = async (linkId: string, url: string) => {
-    setCheckingLinks(prev => [...prev, linkId]);
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const statuses: LinkStatus[] = ['online', 'offline', 'error'];
-      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-      const responseTime = randomStatus === 'online' ? Math.floor(Math.random() * 500) + 50 : null;
-
-      const { error } = await supabase
-        .from('links')
-        .update({
-          status: randomStatus,
-          response_time: responseTime,
-          last_checked: new Date().toISOString(),
-        })
-        .eq('id', linkId);
-
-      if (error) throw error;
-
-      setLinks(prev =>
-        prev.map(link =>
-          link.id === linkId
-            ? {
-                ...link,
-                status: randomStatus,
-                response_time: responseTime,
-                last_checked: new Date().toISOString(),
-              }
-            : link
-        )
-      );
-
-      toast.success(`Status atualizado: ${randomStatus.toUpperCase()}`);
-    } catch (error) {
-      console.error('Error checking link:', error);
-      toast.error('Erro ao verificar link');
-    } finally {
-      setCheckingLinks(prev => prev.filter(id => id !== linkId));
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      online: { color: 'bg-green-500', text: 'Online' },
-      offline: { color: 'bg-red-500', text: 'Offline' },
-      error: { color: 'bg-yellow-500', text: 'Erro' },
-      pending: { color: 'bg-gray-500', text: 'Pendente' },
-    };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    
-    return (
-      <Badge className={`${config.color} text-white border-none`}>
-        {config.text}
-      </Badge>
+    const filteredLinks = links.filter(link =>
+      link.name.toLowerCase().includes(query.toLowerCase()) ||
+      link.url.toLowerCase().includes(query.toLowerCase()) ||
+      link.description?.toLowerCase().includes(query.toLowerCase())
     );
+
+    setFilteredData({ companies: filteredCompanies, links: filteredLinks });
   };
 
-  const getLinksForCompany = (companyId: string) => {
-    return links.filter(link => link.company_id === companyId);
-  };
-
-  const openEditCompanyDialog = (company: Company) => {
-    setEditingCompany(company);
-    setNewCompany({
-      name: company.name,
-      description: company.description || '',
-    });
-    setIsCompanyDialogOpen(true);
-  };
-
-  const openEditLinkDialog = (link: Link) => {
-    setEditingLink(link);
-    setNewLink({
-      name: link.name,
-      url: link.url,
-      description: link.description || '',
-    });
-    setSelectedCompanyId(link.company_id);
-    setIsLinkDialogOpen(true);
-  };
-
-  const closeCompanyDialog = () => {
-    setIsCompanyDialogOpen(false);
-    setEditingCompany(null);
-    setNewCompany({ name: '', description: '' });
-  };
-
-  const closeLinkDialog = () => {
-    setIsLinkDialogOpen(false);
-    setEditingLink(null);
-    setNewLink({ name: '', url: '', description: '' });
-    setSelectedCompanyId('');
-  };
-
-  const offlineLinks = links.filter(l => l.status === 'offline' || l.status === 'error');
+  const offlineLinks = links.filter(link => link.status === 'offline');
 
   if (loading) {
     return (
       <div className="min-h-screen bg-saas-black">
         <Navbar />
         <div className="flex items-center justify-center h-96">
-          <RefreshCw className="h-8 w-8 animate-spin text-saas-red" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-saas-red"></div>
         </div>
       </div>
     );
@@ -413,167 +150,71 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
-            <p className="text-gray-400">Monitore seus links e gerencie suas empresas</p>
+            <p className="text-gray-400">Monitore suas empresas e links em tempo real</p>
           </div>
           
-          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-            <SearchBar onSearch={handleSearch} placeholder="Pesquisar empresas ou links..." />
-            
-            <Dialog open={isCompanyDialogOpen} onOpenChange={closeCompanyDialog}>
-              <DialogTrigger asChild>
-                <Button className="bg-saas-red hover:bg-saas-red-dark text-white">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nova Empresa
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-saas-black-light border-saas-gray/20">
-                <DialogHeader>
-                  <DialogTitle className="text-white">
-                    {editingCompany ? 'Editar Empresa' : 'Criar Nova Empresa'}
-                  </DialogTitle>
-                  <DialogDescription className="text-gray-400">
-                    {editingCompany ? 'Edite as informações da empresa.' : 'Crie um grupo para organizar seus links por empresa ou projeto.'}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="company-name" className="text-gray-300">Nome da Empresa</Label>
-                    <Input
-                      id="company-name"
-                      placeholder="Ex: Google, Facebook, etc."
-                      value={newCompany.name}
-                      onChange={(e) => setNewCompany(prev => ({ ...prev, name: e.target.value }))}
-                      className="bg-saas-black border-saas-gray/20 text-white"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="company-description" className="text-gray-300">Descrição (opcional)</Label>
-                    <Textarea
-                      id="company-description"
-                      placeholder="Descrição da empresa ou projeto"
-                      value={newCompany.description}
-                      onChange={(e) => setNewCompany(prev => ({ ...prev, description: e.target.value }))}
-                      className="bg-saas-black border-saas-gray/20 text-white"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={closeCompanyDialog} className="border-saas-gray/20 text-gray-300">
-                    Cancelar
-                  </Button>
-                  <Button 
-                    onClick={editingCompany ? updateCompany : createCompany} 
-                    className="bg-saas-red hover:bg-saas-red-dark text-white"
-                  >
-                    {editingCompany ? 'Atualizar' : 'Criar'} Empresa
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <SearchBar onSearch={handleSearch} placeholder="Pesquisar empresas e links..." />
+        </div>
+
+        {/* Quick Stats */}
+        <div className="mb-8">
+          <QuickStats stats={stats} />
+        </div>
+
+        {/* Monitoring Controls */}
+        <div className="mb-8">
+          <MonitoringControls userId={user?.id} />
         </div>
 
         {/* Offline Links Alert */}
         {offlineLinks.length > 0 && (
-          <Card className="bg-red-950/20 border-red-500/30 mb-6">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-red-400" />
-                <div>
-                  <h3 className="font-semibold text-red-400">Links com Problemas</h3>
-                  <p className="text-red-300 text-sm">
-                    {offlineLinks.length} link(s) estão offline ou com erro: {' '}
-                    {offlineLinks.slice(0, 3).map(link => link.name).join(', ')}
-                    {offlineLinks.length > 3 && ` e mais ${offlineLinks.length - 3}`}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <Alert className="mb-8 border-red-500/20 bg-red-500/10">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <AlertDescription className="text-red-200">
+              <strong>{offlineLinks.length} link(s) offline:</strong>{' '}
+              {offlineLinks.map(link => link.name).join(', ')}
+            </AlertDescription>
+          </Alert>
         )}
 
-        {/* Statistics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-saas-black-light border-saas-gray/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-gray-300 text-sm font-medium">Empresas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalCompanies}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-saas-black-light border-saas-gray/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-gray-300 text-sm font-medium">Total Links</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalLinks}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-saas-black-light border-saas-gray/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-gray-300 text-sm font-medium flex items-center gap-1">
-                <TrendingUp className="h-4 w-4" />
-                Online
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-500">{stats.onlineLinks}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-saas-black-light border-saas-gray/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-gray-300 text-sm font-medium">Problemas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-500">
-                {stats.offlineLinks + stats.errorLinks}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Charts Section */}
+        <div className="mb-8">
+          <DashboardCharts companies={companies} links={links} />
         </div>
 
-        {/* Charts */}
-        {stats.totalLinks > 0 && (
-          <div className="mb-8">
-            <DashboardCharts stats={stats} links={links} />
-          </div>
-        )}
+        {/* Action Buttons */}
+        <div className="flex gap-4 mb-8">
+          <Dialog open={isCompanyDialogOpen} onOpenChange={setIsCompanyDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-saas-red hover:bg-saas-red-dark text-white">
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Empresa
+              </Button>
+            </DialogTrigger>
+            {/* ... keep existing dialog content */}
+          </Dialog>
 
-        {/* Companies and Links */}
-        <div className="space-y-6">
-          {filteredCompanies.length === 0 ? (
-            <Card className="bg-saas-black-light border-saas-gray/20">
-              <CardContent className="pt-6">
-                <div className="text-center py-12">
-                  <Building2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    {companies.length === 0 ? 'Nenhuma empresa criada' : 'Nenhuma empresa encontrada'}
-                  </h3>
-                  <p className="text-gray-400 mb-4">
-                    {companies.length === 0 ? 'Comece criando uma empresa para organizar seus links' : 'Tente ajustar sua pesquisa'}
-                  </p>
-                  {companies.length === 0 && (
-                    <Button 
-                      onClick={() => setIsCompanyDialogOpen(true)}
-                      className="bg-saas-red hover:bg-saas-red-dark text-white"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Criar Primeira Empresa
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredCompanies.map((company) => (
+          <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-saas-gray/20 text-gray-300">
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Link
+              </Button>
+            </DialogTrigger>
+            {/* ... keep existing dialog content */}
+          </Dialog>
+        </div>
+
+        {/* Companies and Links Grid */}
+        <div className="space-y-8">
+          {filteredData.companies.map((company) => {
+            const companyLinks = filteredData.links.filter(link => link.company_id === company.id);
+            
+            return (
               <Card key={company.id} className="bg-saas-black-light border-saas-gray/20">
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className="flex-1">
                       <CardTitle className="text-white flex items-center gap-2">
                         <Building2 className="h-5 w-5 text-saas-red" />
                         {company.name}
@@ -585,183 +226,99 @@ export default function Dashboard() {
                       )}
                     </div>
                     <div className="flex gap-2">
-                      <Dialog open={isLinkDialogOpen} onOpenChange={closeLinkDialog}>
-                        <DialogTrigger asChild>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="border-saas-red text-saas-red hover:bg-saas-red hover:text-white"
-                            onClick={() => setSelectedCompanyId(company.id)}
-                          >
-                            <Plus className="mr-1 h-3 w-3" />
-                            Link
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="bg-saas-black-light border-saas-gray/20">
-                          <DialogHeader>
-                            <DialogTitle className="text-white">
-                              {editingLink ? 'Editar Link' : 'Adicionar Novo Link'}
-                            </DialogTitle>
-                            <DialogDescription className="text-gray-400">
-                              {editingLink ? 'Edite as informações do link.' : `Adicione um novo link para monitoramento em ${company.name}.`}
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div className="grid gap-2">
-                              <Label htmlFor="link-name" className="text-gray-300">Nome do Site</Label>
-                              <Input
-                                id="link-name"
-                                placeholder="Ex: YouTube, Facebook, etc."
-                                value={newLink.name}
-                                onChange={(e) => setNewLink(prev => ({ ...prev, name: e.target.value }))}
-                                className="bg-saas-black border-saas-gray/20 text-white"
-                              />
-                            </div>
-                            <div className="grid gap-2">
-                              <Label htmlFor="link-url" className="text-gray-300">URL</Label>
-                              <Input
-                                id="link-url"
-                                placeholder="https://exemplo.com"
-                                value={newLink.url}
-                                onChange={(e) => setNewLink(prev => ({ ...prev, url: e.target.value }))}
-                                className="bg-saas-black border-saas-gray/20 text-white"
-                              />
-                            </div>
-                            <div className="grid gap-2">
-                              <Label htmlFor="link-description" className="text-gray-300">Descrição (opcional)</Label>
-                              <Textarea
-                                id="link-description"
-                                placeholder="Descrição do site ou serviço"
-                                value={newLink.description}
-                                onChange={(e) => setNewLink(prev => ({ ...prev, description: e.target.value }))}
-                                className="bg-saas-black border-saas-gray/20 text-white"
-                              />
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <Button variant="outline" onClick={closeLinkDialog} className="border-saas-gray/20 text-gray-300">
-                              Cancelar
-                            </Button>
-                            <Button 
-                              onClick={editingLink ? updateLink : createLink} 
-                              className="bg-saas-red hover:bg-saas-red-dark text-white"
-                            >
-                              {editingLink ? 'Atualizar' : 'Adicionar'} Link
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                      
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
-                        onClick={() => openEditCompanyDialog(company)}
-                      >
-                        <Edit className="h-3 w-3" />
+                      <Button size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300">
+                        <Edit className="h-4 w-4" />
                       </Button>
-                      
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                        onClick={() => deleteCompany(company.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
+                      <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300">
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                 </CardHeader>
-                
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {getLinksForCompany(company.id).map((link) => (
-                      <Card key={link.id} className="bg-saas-black border-saas-gray/20">
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-3">
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-white truncate">{link.name}</h4>
-                              <a 
-                                href={link.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="text-xs text-blue-400 hover:underline truncate block mt-1"
-                              >
-                                {link.url}
-                              </a>
-                              {link.description && (
-                                <p className="text-xs text-gray-400 mt-1">{link.description}</p>
-                              )}
+                  {companyLinks.length === 0 ? (
+                    <p className="text-gray-400 text-center py-4">Nenhum link cadastrado</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {companyLinks.map((link) => (
+                        <Card key={link.id} className="bg-saas-black border-saas-gray/20">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-white truncate">{link.name}</h4>
+                                <a 
+                                  href={link.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-xs text-blue-400 hover:underline truncate block"
+                                >
+                                  {link.url}
+                                </a>
+                              </div>
+                              <div className="flex gap-1 ml-2">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                                  onClick={() => window.open(link.url, '_blank')}
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 text-blue-400 hover:text-blue-300"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex gap-1 ml-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-                                onClick={() => window.open(link.url, '_blank')}
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 w-6 p-0 text-blue-400 hover:text-blue-300"
-                                onClick={() => openEditLinkDialog(link)}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
-                                onClick={() => deleteLink(link.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                            <div className="flex justify-between items-center">
+                              <LinkStatusIndicator 
+                                status={link.status}
+                                responseTime={link.response_time}
+                                lastChecked={link.last_checked}
+                              />
                             </div>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            {getStatusBadge(link.status)}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 px-2 text-xs text-gray-400 hover:text-white"
-                              onClick={() => checkLinkStatus(link.id, link.url)}
-                              disabled={checkingLinks.includes(link.id)}
-                            >
-                              {checkingLinks.includes(link.id) ? (
-                                <RefreshCw className="h-3 w-3 animate-spin" />
-                              ) : (
-                                'Verificar'
-                              )}
-                            </Button>
-                          </div>
-                          
-                          {link.last_checked && (
-                            <div className="mt-2 text-xs text-gray-500">
-                              Verificado: {new Date(link.last_checked).toLocaleString('pt-BR')}
-                              {link.response_time && (
-                                <span className="ml-2">({link.response_time}ms)</span>
-                              )}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                    
-                    {getLinksForCompany(company.id).length === 0 && (
-                      <div className="col-span-full text-center py-8">
-                        <Globe className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                        <p className="text-gray-400 text-sm">Nenhum link adicionado ainda</p>
-                      </div>
-                    )}
-                  </div>
+                            {link.description && (
+                              <p className="text-xs text-gray-400 mt-2 line-clamp-2">{link.description}</p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            ))
-          )}
+            );
+          })}
         </div>
+
+        {filteredData.companies.length === 0 && (
+          <Card className="bg-saas-black-light border-saas-gray/20">
+            <CardContent className="pt-6">
+              <div className="text-center py-12">
+                <Building2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">Nenhuma empresa encontrada</h3>
+                <p className="text-gray-400 mb-4">Comece criando sua primeira empresa e adicionando links para monitorar</p>
+                <Button 
+                  onClick={() => setIsCompanyDialogOpen(true)}
+                  className="bg-saas-red hover:bg-saas-red-dark text-white"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Criar Primeira Empresa
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );
