@@ -335,6 +335,9 @@ export default function Dashboard() {
     totalLinks: links.length,
     totalCompanies: companies.length,
     onlineLinks: links.filter(l => l.status === 'online').length,
+    offlineLinks: links.filter(l => l.status === 'offline').length,
+    errorLinks: links.filter(l => l.status === 'error').length,
+    pendingLinks: links.filter(l => l.status === 'pending').length,
     averageResponseTime: links.length > 0 
       ? Math.round(links.reduce((acc, link) => acc + (link.response_time || 0), 0) / links.length)
       : 0
