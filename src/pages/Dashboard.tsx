@@ -14,24 +14,6 @@ import { toast } from 'sonner';
 import { Building2, Globe, Plus, Trash2, Edit, ExternalLink, RefreshCw } from 'lucide-react';
 import { Company, Link, LinkStatus } from '@/types';
 
-interface Company {
-  id: string;
-  name: string;
-  description: string | null;
-  created_at: string;
-}
-
-interface Link {
-  id: string;
-  name: string;
-  url: string;
-  description: string | null;
-  status: 'online' | 'offline' | 'error' | 'pending';
-  response_time: number | null;
-  last_checked: string | null;
-  company_id: string;
-}
-
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
