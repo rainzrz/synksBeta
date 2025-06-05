@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -13,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Building2, Globe, Plus, Trash2, Edit, ExternalLink, RefreshCw } from 'lucide-react';
+import { Company, Link, LinkStatus } from '@/types';
 
 interface Company {
   id: string;
@@ -81,7 +81,11 @@ export default function Dashboard() {
       if (linksError) throw linksError;
 
       setCompanies(companiesData || []);
-      setLinks(linksData || []);
+      // Type assertion to ensure status is the correct type
+      setLinks((linksData || []).map(link => ({
+        ...link,
+        status: link.status as LinkStatus
+      })));
     } catch (error) {
       console.error('Error loading data:', error);
       toast.error('Erro ao carregar dados');
@@ -138,7 +142,10 @@ export default function Dashboard() {
 
       if (error) throw error;
 
-      setLinks(prev => [data, ...prev]);
+      setLinks(prev => [{
+        ...data,
+        status: data.status as LinkStatus
+      }, ...prev]);
       setNewLink({ name: '', url: '', description: '' });
       setIsLinkDialogOpen(false);
       toast.success('Link criado com sucesso!');
@@ -190,7 +197,7 @@ export default function Dashboard() {
       // Simulate API call to check link status
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const statuses = ['online', 'offline', 'error'];
+      const statuses: LinkStatus[] = ['online', 'offline', 'error'];
       const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
       const responseTime = randomStatus === 'online' ? Math.floor(Math.random() * 500) + 50 : null;
 
@@ -210,7 +217,7 @@ export default function Dashboard() {
           link.id === linkId
             ? {
                 ...link,
-                status: randomStatus as any,
+                status: randomStatus,
                 response_time: responseTime,
                 last_checked: new Date().toISOString(),
               }

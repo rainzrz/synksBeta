@@ -14,7 +14,7 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const { signup, isLoading } = useAuth();
+  const { signUp, isLoading } = useAuth();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +30,7 @@ const Register = () => {
     }
     
     try {
-      await signup(email, password, name);
+      await signUp(email, password, name);
     } catch (error) {
       // Error is handled in the auth context
       console.error("Registration failed:", error);

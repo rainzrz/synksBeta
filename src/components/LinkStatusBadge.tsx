@@ -47,7 +47,7 @@ export const LinkStatusBadge: React.FC<LinkStatusBadgeProps> = ({
           icon: <AlertCircleIcon className="w-3 h-3 mr-1" />,
           bgClass: "bg-orange-500 hover:bg-orange-600"
         };
-      case "loading":
+      case "pending":
         return {
           variant: "secondary" as const,
           label: "Verificando",

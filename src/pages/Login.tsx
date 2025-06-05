@@ -12,7 +12,7 @@ import { Loader2, Code } from "lucide-react";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, loginAsGuest, isLoading } = useAuth();
+  const { signIn, isLoading } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,15 +23,11 @@ const Login = () => {
     }
     
     try {
-      await login(email, password);
+      await signIn(email, password);
     } catch (error) {
       // Error is handled in the auth context
       console.error("Login failed:", error);
     }
-  };
-
-  const handleGuestLogin = () => {
-    loginAsGuest();
   };
 
   return (
@@ -89,16 +85,6 @@ const Login = () => {
                 "Entrar"}
             </Button>
           </form>
-          <div className="mt-4">
-            <Button 
-              variant="outline" 
-              className="w-full border-saas-red text-white hover:bg-saas-red/10" 
-              onClick={handleGuestLogin}
-              disabled={isLoading}
-            >
-              Entrar como Convidado
-            </Button>
-          </div>
           <div className="mt-4 text-center">
             <p className="text-gray-400">Não tem uma conta? {" "}
               <Link to="/register" className="text-saas-red hover:underline">
