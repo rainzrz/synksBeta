@@ -55,7 +55,8 @@ export default function Tools() {
 
   const loadTools = async () => {
     try {
-      const { data, error } = await supabase
+      // Using any type temporarily until Supabase types are updated
+      const { data, error } = await (supabase as any)
         .from('tools')
         .select('*')
         .eq('user_id', user?.id)
@@ -89,7 +90,7 @@ export default function Tools() {
     if (!newTool.name.trim() || !newTool.url.trim() || !user) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tools')
         .insert([
           {
@@ -120,7 +121,7 @@ export default function Tools() {
     if (!editingTool || !newTool.name.trim() || !newTool.url.trim()) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tools')
         .update({
           name: newTool.name,
@@ -150,7 +151,7 @@ export default function Tools() {
 
   const deleteTool = async (toolId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('tools')
         .delete()
         .eq('id', toolId);
