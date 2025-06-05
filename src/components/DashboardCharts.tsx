@@ -2,19 +2,24 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { DashboardStats, Link } from '@/types';
+import { Company, Link } from '@/types';
 
 interface DashboardChartsProps {
-  stats: DashboardStats;
+  companies: Company[];
   links: Link[];
 }
 
-export default function DashboardCharts({ stats, links }: DashboardChartsProps) {
+export default function DashboardCharts({ companies, links }: DashboardChartsProps) {
+  const onlineLinks = links.filter(l => l.status === 'online').length;
+  const offlineLinks = links.filter(l => l.status === 'offline').length;
+  const errorLinks = links.filter(l => l.status === 'error').length;
+  const pendingLinks = links.filter(l => l.status === 'pending').length;
+
   const statusData = [
-    { name: 'Online', value: stats.onlineLinks, color: '#10b981' },
-    { name: 'Offline', value: stats.offlineLinks, color: '#ef4444' },
-    { name: 'Erro', value: stats.errorLinks, color: '#f59e0b' },
-    { name: 'Pendente', value: stats.pendingLinks, color: '#6b7280' },
+    { name: 'Online', value: onlineLinks, color: '#10b981' },
+    { name: 'Offline', value: offlineLinks, color: '#ef4444' },
+    { name: 'Erro', value: errorLinks, color: '#f59e0b' },
+    { name: 'Pendente', value: pendingLinks, color: '#6b7280' },
   ];
 
   const responseTimeData = links

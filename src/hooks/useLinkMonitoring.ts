@@ -1,14 +1,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Link } from '@/types';
+import { Link, LinkStatus } from '@/types';
 import { toast } from 'sonner';
 
 export const useLinkMonitoring = (userId: string | undefined) => {
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [monitoringInterval, setMonitoringInterval] = useState<NodeJS.Timeout | null>(null);
 
-  const checkLinkStatus = async (link: Link): Promise<{ status: string; responseTime: number }> => {
+  const checkLinkStatus = async (link: Link): Promise<{ status: LinkStatus; responseTime: number }> => {
     const startTime = Date.now();
     
     try {
@@ -31,7 +31,7 @@ export const useLinkMonitoring = (userId: string | undefined) => {
     }
   };
 
-  const updateLinkStatus = async (linkId: string, status: string, responseTime: number) => {
+  const updateLinkStatus = async (linkId: string, status: LinkStatus, responseTime: number) => {
     try {
       await supabase
         .from('links')
@@ -51,14 +51,20 @@ export const useLinkMonitoring = (userId: string | undefined) => {
     if (!userId) return;
 
     try {
-      const { data: links, error } = await supabase
+      const { data: linksData, error } = await supabase
         .from('links')
         .select('*')
         .eq('user_id', userId);
 
       if (error) throw error;
 
-      for (const link of links || []) {
+      // Type cast the data to ensure proper typing
+      const links = linksData?.map(link => ({
+        ...link,
+        status: link.status as LinkStatus
+      })) as Link[] || [];
+
+      for (const link of links) {
         const { status, responseTime } = await checkLinkStatus(link);
         
         // Show notification if link went offline

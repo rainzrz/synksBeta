@@ -76,7 +76,14 @@ export default function Dashboard() {
       if (linksResponse.error) throw linksResponse.error;
 
       setCompanies(companiesResponse.data || []);
-      setLinks(linksResponse.data || []);
+      
+      // Type cast the links data to ensure proper status typing
+      const typedLinks = linksResponse.data?.map(link => ({
+        ...link,
+        status: link.status as Link['status']
+      })) as Link[] || [];
+      
+      setLinks(typedLinks);
     } catch (error) {
       console.error('Error loading data:', error);
       toast.error('Erro ao carregar dados');
