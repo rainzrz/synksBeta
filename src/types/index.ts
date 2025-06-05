@@ -1,41 +1,33 @@
 
-export type LinkStatus = "online" | "offline" | "error" | "loading";
+export interface Company {
+  id: string;
+  name: string;
+  description: string | null;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Link {
   id: string;
   url: string;
   name: string;
-  description?: string;
-  status: LinkStatus;
-  groupId: string;
-  lastChecked?: Date;
-  responseTime?: number;
-  downtime?: {
-    since?: Date;
-    duration?: string;
-  };
-  createdAt: Date;
+  description: string | null;
+  company_id: string;
+  status: 'online' | 'offline' | 'error' | 'pending';
+  response_time: number | null;
+  last_checked: string | null;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface Group {
+export interface Profile {
   id: string;
   name: string;
-  clientId: string;
-  createdAt: Date;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface Client {
-  id: string;
-  name: string;
-  createdAt: Date;
-}
-
-export interface User {
-  id?: string;
-  email: string;
-  name: string;
-  role: "editor" | "viewer";
-  avatar?: string;
-  phone?: string;
-  bio?: string;
-}
+export type LinkStatus = "online" | "offline" | "error" | "pending";
