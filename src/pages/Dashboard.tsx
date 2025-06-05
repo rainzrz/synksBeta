@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -61,7 +60,7 @@ export default function Dashboard() {
   const [companyForm, setCompanyForm] = useState({ name: '', description: '' });
   const [linkForm, setLinkForm] = useState({ name: '', url: '', description: '', company_id: '' });
   
-  const { isMonitoring, startMonitoring, stopMonitoring, checkAllLinks } = useLinkMonitoring();
+  const { isMonitoring, startMonitoring, stopMonitoring, checkAllLinks } = useLinkMonitoring(user?.id);
 
   useEffect(() => {
     if (user) {
