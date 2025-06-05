@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useLinkMonitoring } from '@/hooks/useLinkMonitoring';
 import DashboardCharts from '@/components/DashboardCharts';
 import QuickStats from '@/components/QuickStats';
+import MonitoringControls from '@/components/MonitoringControls';
 
 interface Company {
   id: string;
@@ -55,7 +55,7 @@ export default function Dashboard() {
   const [companyForm, setCompanyForm] = useState({ name: '', description: '' });
   const [linkForm, setLinkForm] = useState({ name: '', url: '', description: '', company_id: '' });
   
-  const { startMonitoring, stopMonitoring, monitoringStatus } = useLinkMonitoring();
+  const { isMonitoring, startMonitoring, stopMonitoring, checkAllLinks } = useLinkMonitoring(user?.id);
 
   useEffect(() => {
     if (user) {
@@ -330,6 +330,16 @@ export default function Dashboard() {
     }
   };
 
+  // Calculate stats for QuickStats component
+  const stats = {
+    totalLinks: links.length,
+    totalCompanies: companies.length,
+    onlineLinks: links.filter(l => l.status === 'online').length,
+    averageResponseTime: links.length > 0 
+      ? Math.round(links.reduce((acc, link) => acc + (link.response_time || 0), 0) / links.length)
+      : 0
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-saas-black">
@@ -439,7 +449,7 @@ export default function Dashboard() {
                       value={linkForm.url}
                       onChange={(e) => setLinkForm(prev => ({ ...prev, url: e.target.value }))}
                       className="bg-saas-black border-saas-gray/20 text-white"
-                      placeholder="https://exemplo.com"
+                      placeholder="https://exemplo.com ou http://exemplo.com"
                     />
                   </div>
                   <div>
@@ -489,11 +499,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <QuickStats companies={companies} links={links} />
-        <DashboardCharts companies={companies} links={links} />
+        <div className="space-y-8">
+          <QuickStats stats={stats} />
+          <DashboardCharts companies={companies} links={links} />
+          <MonitoringControls userId={user?.id} />
+        </div>
 
         {/* Companies Section */}
-        <div className="grid md:grid-cols-2 gap-8 mb-8">
+        <div className="grid md:grid-cols-2 gap-8 mb-8 mt-8">
           <Card className="bg-saas-black-light border-saas-gray/20">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
