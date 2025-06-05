@@ -36,6 +36,18 @@ const App = () => (
               </ProtectedRoute>
             } />
             
+            <Route path="/tools" element={
+              <ProtectedRoute>
+                <Tools />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } />
+            
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />

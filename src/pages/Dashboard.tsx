@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import SearchBar from '@/components/SearchBar';
@@ -136,6 +137,193 @@ export default function Dashboard() {
     setFilteredData({ companies: filteredCompanies, links: filteredLinks });
   };
 
+  const createCompany = async () => {
+    if (!newCompany.name.trim() || !user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .insert([
+          {
+            name: newCompany.name,
+            description: newCompany.description,
+            user_id: user.id,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCompanies(prev => [data, ...prev]);
+      setNewCompany({ name: '', description: '' });
+      setIsCompanyDialogOpen(false);
+      toast.success('Empresa criada com sucesso!');
+    } catch (error) {
+      console.error('Error creating company:', error);
+      toast.error('Erro ao criar empresa');
+    }
+  };
+
+  const updateCompany = async () => {
+    if (!editingCompany || !newCompany.name.trim()) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .update({
+          name: newCompany.name,
+          description: newCompany.description,
+        })
+        .eq('id', editingCompany.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCompanies(prev => prev.map(company => 
+        company.id === editingCompany.id ? data : company
+      ));
+      setEditingCompany(null);
+      setNewCompany({ name: '', description: '' });
+      setIsCompanyDialogOpen(false);
+      toast.success('Empresa atualizada com sucesso!');
+    } catch (error) {
+      console.error('Error updating company:', error);
+      toast.error('Erro ao atualizar empresa');
+    }
+  };
+
+  const deleteCompany = async (companyId: string) => {
+    try {
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', companyId);
+
+      if (error) throw error;
+
+      setCompanies(prev => prev.filter(c => c.id !== companyId));
+      setLinks(prev => prev.filter(l => l.company_id !== companyId));
+      toast.success('Empresa excluída com sucesso!');
+    } catch (error) {
+      console.error('Error deleting company:', error);
+      toast.error('Erro ao excluir empresa');
+    }
+  };
+
+  const createLink = async () => {
+    if (!newLink.name.trim() || !newLink.url.trim() || !newLink.company_id || !user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('links')
+        .insert([
+          {
+            name: newLink.name,
+            url: newLink.url,
+            description: newLink.description,
+            company_id: newLink.company_id,
+            user_id: user.id,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const typedLink = { ...data, status: data.status as Link['status'] } as Link;
+      setLinks(prev => [typedLink, ...prev]);
+      setNewLink({ name: '', url: '', description: '', company_id: '' });
+      setIsLinkDialogOpen(false);
+      toast.success('Link criado com sucesso!');
+    } catch (error) {
+      console.error('Error creating link:', error);
+      toast.error('Erro ao criar link');
+    }
+  };
+
+  const updateLink = async () => {
+    if (!editingLink || !newLink.name.trim() || !newLink.url.trim() || !newLink.company_id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('links')
+        .update({
+          name: newLink.name,
+          url: newLink.url,
+          description: newLink.description,
+          company_id: newLink.company_id,
+        })
+        .eq('id', editingLink.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const typedLink = { ...data, status: data.status as Link['status'] } as Link;
+      setLinks(prev => prev.map(link => 
+        link.id === editingLink.id ? typedLink : link
+      ));
+      setEditingLink(null);
+      setNewLink({ name: '', url: '', description: '', company_id: '' });
+      setIsLinkDialogOpen(false);
+      toast.success('Link atualizado com sucesso!');
+    } catch (error) {
+      console.error('Error updating link:', error);
+      toast.error('Erro ao atualizar link');
+    }
+  };
+
+  const deleteLink = async (linkId: string) => {
+    try {
+      const { error } = await supabase
+        .from('links')
+        .delete()
+        .eq('id', linkId);
+
+      if (error) throw error;
+
+      setLinks(prev => prev.filter(l => l.id !== linkId));
+      toast.success('Link excluído com sucesso!');
+    } catch (error) {
+      console.error('Error deleting link:', error);
+      toast.error('Erro ao excluir link');
+    }
+  };
+
+  const openEditCompanyDialog = (company: Company) => {
+    setEditingCompany(company);
+    setNewCompany({
+      name: company.name,
+      description: company.description || '',
+    });
+    setIsCompanyDialogOpen(true);
+  };
+
+  const openEditLinkDialog = (link: Link) => {
+    setEditingLink(link);
+    setNewLink({
+      name: link.name,
+      url: link.url,
+      description: link.description || '',
+      company_id: link.company_id,
+    });
+    setIsLinkDialogOpen(true);
+  };
+
+  const closeCompanyDialog = () => {
+    setIsCompanyDialogOpen(false);
+    setEditingCompany(null);
+    setNewCompany({ name: '', description: '' });
+  };
+
+  const closeLinkDialog = () => {
+    setIsLinkDialogOpen(false);
+    setEditingLink(null);
+    setNewLink({ name: '', url: '', description: '', company_id: '' });
+  };
+
   const offlineLinks = links.filter(link => link.status === 'offline');
 
   if (loading) {
@@ -191,24 +379,136 @@ export default function Dashboard() {
 
         {/* Action Buttons */}
         <div className="flex gap-4 mb-8">
-          <Dialog open={isCompanyDialogOpen} onOpenChange={setIsCompanyDialogOpen}>
+          <Dialog open={isCompanyDialogOpen} onOpenChange={closeCompanyDialog}>
             <DialogTrigger asChild>
               <Button className="bg-saas-red hover:bg-saas-red-dark text-white">
                 <Plus className="mr-2 h-4 w-4" />
                 Nova Empresa
               </Button>
             </DialogTrigger>
-            {/* ... keep existing dialog content */}
+            <DialogContent className="bg-saas-black-light border-saas-gray/20">
+              <DialogHeader>
+                <DialogTitle className="text-white">
+                  {editingCompany ? 'Editar Empresa' : 'Criar Nova Empresa'}
+                </DialogTitle>
+                <DialogDescription className="text-gray-400">
+                  {editingCompany ? 'Edite as informações da empresa.' : 'Adicione uma nova empresa para organizar seus links.'}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="company-name" className="text-gray-300">Nome</Label>
+                  <Input
+                    id="company-name"
+                    placeholder="Ex: Google, Facebook, etc."
+                    value={newCompany.name}
+                    onChange={(e) => setNewCompany(prev => ({ ...prev, name: e.target.value }))}
+                    className="bg-saas-black border-saas-gray/20 text-white"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="company-description" className="text-gray-300">Descrição (opcional)</Label>
+                  <Textarea
+                    id="company-description"
+                    placeholder="Descrição da empresa"
+                    value={newCompany.description}
+                    onChange={(e) => setNewCompany(prev => ({ ...prev, description: e.target.value }))}
+                    className="bg-saas-black border-saas-gray/20 text-white"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={closeCompanyDialog} className="border-saas-gray/20 text-gray-300">
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={editingCompany ? updateCompany : createCompany} 
+                  className="bg-saas-red hover:bg-saas-red-dark text-white"
+                >
+                  {editingCompany ? 'Atualizar' : 'Criar'} Empresa
+                </Button>
+              </DialogFooter>
+            </DialogContent>
           </Dialog>
 
-          <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
+          <Dialog open={isLinkDialogOpen} onOpenChange={closeLinkDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" className="border-saas-gray/20 text-gray-300">
                 <Plus className="mr-2 h-4 w-4" />
                 Novo Link
               </Button>
             </DialogTrigger>
-            {/* ... keep existing dialog content */}
+            <DialogContent className="bg-saas-black-light border-saas-gray/20">
+              <DialogHeader>
+                <DialogTitle className="text-white">
+                  {editingLink ? 'Editar Link' : 'Criar Novo Link'}
+                </DialogTitle>
+                <DialogDescription className="text-gray-400">
+                  {editingLink ? 'Edite as informações do link.' : 'Adicione um novo link para monitorar.'}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="link-name" className="text-gray-300">Nome</Label>
+                  <Input
+                    id="link-name"
+                    placeholder="Ex: Site Principal"
+                    value={newLink.name}
+                    onChange={(e) => setNewLink(prev => ({ ...prev, name: e.target.value }))}
+                    className="bg-saas-black border-saas-gray/20 text-white"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="link-url" className="text-gray-300">URL</Label>
+                  <Input
+                    id="link-url"
+                    placeholder="https://exemplo.com"
+                    value={newLink.url}
+                    onChange={(e) => setNewLink(prev => ({ ...prev, url: e.target.value }))}
+                    className="bg-saas-black border-saas-gray/20 text-white"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="link-company" className="text-gray-300">Empresa</Label>
+                  <Select
+                    value={newLink.company_id}
+                    onValueChange={(value) => setNewLink(prev => ({ ...prev, company_id: value }))}
+                  >
+                    <SelectTrigger className="bg-saas-black border-saas-gray/20 text-white">
+                      <SelectValue placeholder="Selecione uma empresa" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-saas-black-light border-saas-gray/20">
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id} className="text-white">
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="link-description" className="text-gray-300">Descrição (opcional)</Label>
+                  <Textarea
+                    id="link-description"
+                    placeholder="Descrição do link"
+                    value={newLink.description}
+                    onChange={(e) => setNewLink(prev => ({ ...prev, description: e.target.value }))}
+                    className="bg-saas-black border-saas-gray/20 text-white"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={closeLinkDialog} className="border-saas-gray/20 text-gray-300">
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={editingLink ? updateLink : createLink} 
+                  className="bg-saas-red hover:bg-saas-red-dark text-white"
+                >
+                  {editingLink ? 'Atualizar' : 'Criar'} Link
+                </Button>
+              </DialogFooter>
+            </DialogContent>
           </Dialog>
         </div>
 
@@ -233,10 +533,20 @@ export default function Dashboard() {
                       )}
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="ghost" className="text-blue-400 hover:text-blue-300">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="text-blue-400 hover:text-blue-300"
+                        onClick={() => openEditCompanyDialog(company)}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="text-red-400 hover:text-red-300"
+                        onClick={() => deleteCompany(company.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -275,6 +585,7 @@ export default function Dashboard() {
                                   size="sm"
                                   variant="ghost"
                                   className="h-6 w-6 p-0 text-blue-400 hover:text-blue-300"
+                                  onClick={() => openEditLinkDialog(link)}
                                 >
                                   <Edit className="h-3 w-3" />
                                 </Button>
@@ -282,6 +593,7 @@ export default function Dashboard() {
                                   size="sm"
                                   variant="ghost"
                                   className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
+                                  onClick={() => deleteLink(link.id)}
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
