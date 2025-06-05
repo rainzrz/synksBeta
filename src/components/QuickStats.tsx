@@ -13,25 +13,25 @@ export default function QuickStats({ stats }: QuickStatsProps) {
     {
       title: 'Total de Links',
       value: stats.totalLinks,
-      icon: <Link className="h-5 w-5 text-blue-400" />,
+      icon: <Link className="h-5 w-5 text-saas-red" />,
       description: `em ${stats.totalCompanies} empresas`
     },
     {
       title: 'Links Online',
       value: stats.onlineLinks,
-      icon: <Globe className="h-5 w-5 text-green-400" />,
+      icon: <Globe className="h-5 w-5 text-saas-red" />,
       description: `${stats.totalLinks > 0 ? Math.round((stats.onlineLinks / stats.totalLinks) * 100) : 0}% funcionando`
     },
     {
       title: 'Tempo Médio',
       value: `${stats.averageResponseTime}ms`,
-      icon: <Clock className="h-5 w-5 text-yellow-400" />,
+      icon: <Clock className="h-5 w-5 text-saas-red" />,
       description: 'tempo de resposta'
     },
     {
       title: 'Disponibilidade',
       value: `${stats.totalLinks > 0 ? Math.round(((stats.onlineLinks) / stats.totalLinks) * 100) : 0}%`,
-      icon: <TrendingUp className="h-5 w-5 text-purple-400" />,
+      icon: <TrendingUp className="h-5 w-5 text-saas-red" />,
       description: 'uptime geral'
     }
   ];

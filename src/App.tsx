@@ -10,6 +10,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Company from "./pages/Company";
 import Tools from "./pages/Tools";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
@@ -33,6 +34,12 @@ const App = () => (
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/company/:id" element={
+              <ProtectedRoute>
+                <Company />
               </ProtectedRoute>
             } />
             

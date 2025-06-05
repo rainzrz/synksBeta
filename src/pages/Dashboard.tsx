@@ -1,5 +1,8 @@
+
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
+import SearchBar from '@/components/SearchBar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,9 +43,12 @@ interface Link {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [links, setLinks] = useState<Link[]>([]);
+  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   
   // Dialog states
@@ -55,13 +61,26 @@ export default function Dashboard() {
   const [companyForm, setCompanyForm] = useState({ name: '', description: '' });
   const [linkForm, setLinkForm] = useState({ name: '', url: '', description: '', company_id: '' });
   
-  const { isMonitoring, startMonitoring, stopMonitoring, checkAllLinks } = useLinkMonitoring(user?.id);
+  const { isMonitoring, startMonitoring, stopMonitoring, checkAllLinks } = useLinkMonitoring();
 
   useEffect(() => {
     if (user) {
       loadData();
     }
   }, [user]);
+
+  useEffect(() => {
+    // Filter companies based on search query
+    if (searchQuery.trim() === '') {
+      setFilteredCompanies(companies);
+    } else {
+      const filtered = companies.filter(company =>
+        company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (company.description && company.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+      setFilteredCompanies(filtered);
+    }
+  }, [companies, searchQuery]);
 
   const loadData = async () => {
     try {
@@ -86,7 +105,6 @@ export default function Dashboard() {
       if (linksError) throw linksError;
 
       setCompanies(companiesData || []);
-      // Type cast the status field to match our Link interface
       setLinks((linksData || []).map(link => ({
         ...link,
         status: link.status as 'online' | 'offline' | 'error' | 'pending'
@@ -330,6 +348,14 @@ export default function Dashboard() {
     }
   };
 
+  const getCompanyLinksCount = (companyId: string) => {
+    return links.filter(link => link.company_id === companyId).length;
+  };
+
+  const getCompanyOfflineLinksCount = (companyId: string) => {
+    return links.filter(link => link.company_id === companyId && (link.status === 'offline' || link.status === 'error')).length;
+  };
+
   // Calculate stats for QuickStats component
   const stats = {
     totalLinks: links.length,
@@ -342,6 +368,9 @@ export default function Dashboard() {
       ? Math.round(links.reduce((acc, link) => acc + (link.response_time || 0), 0) / links.length)
       : 0
   };
+
+  // Filter only offline and error links for the links section
+  const problematicLinks = links.filter(link => link.status === 'offline' || link.status === 'error');
 
   if (loading) {
     return (
@@ -508,74 +537,127 @@ export default function Dashboard() {
           <MonitoringControls userId={user?.id} />
         </div>
 
+        {/* Search Bar */}
+        <div className="mt-8 mb-6">
+          <SearchBar
+            onSearch={setSearchQuery}
+            placeholder="Pesquisar empresas..."
+          />
+        </div>
+
         {/* Companies Section */}
-        <div className="grid md:grid-cols-2 gap-8 mb-8 mt-8">
-          <Card className="bg-saas-black-light border-saas-gray/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                Empresas
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Gerencie suas empresas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {companies.length === 0 ? (
-                <p className="text-gray-400 text-center py-4">Nenhuma empresa cadastrada</p>
-              ) : (
-                <div className="space-y-3">
-                  {companies.map(company => (
-                    <div key={company.id} className="flex items-center justify-between p-3 bg-saas-black rounded-lg border border-saas-gray/20">
-                      <div className="flex-1">
-                        <h3 className="text-white font-medium">{company.name}</h3>
-                        {company.description && (
-                          <p className="text-gray-400 text-sm">{company.description}</p>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
+              <Building2 className="h-6 w-6" />
+              Empresas ({filteredCompanies.length})
+            </h2>
+          </div>
+
+          {filteredCompanies.length === 0 ? (
+            <Card className="bg-saas-black-light border-saas-gray/20">
+              <CardContent className="p-8">
+                <div className="text-center">
+                  <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-400 mb-4">
+                    {searchQuery ? 'Nenhuma empresa encontrada para sua busca' : 'Nenhuma empresa cadastrada'}
+                  </p>
+                  {!searchQuery && (
+                    <Button
+                      onClick={() => openCompanyDialog()}
+                      className="bg-saas-red hover:bg-saas-red-dark text-white"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Criar Primeira Empresa
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredCompanies.map(company => (
+                <Card 
+                  key={company.id} 
+                  className="bg-saas-black-light border-saas-gray/20 cursor-pointer hover:border-saas-red/40 transition-colors"
+                  onClick={() => navigate(`/company/${company.id}`)}
+                >
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-white text-lg">{company.name}</CardTitle>
+                      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => openCompanyDialog(company)}
-                          className="text-gray-400 hover:text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openCompanyDialog(company);
+                          }}
+                          className="text-gray-400 hover:text-white h-8 w-8 p-0"
                         >
-                          <Edit2 className="h-4 w-4" />
+                          <Edit2 className="h-3 w-3" />
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => handleDeleteCompany(company)}
-                          className="text-gray-400 hover:text-red-400"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCompany(company);
+                          }}
+                          className="text-gray-400 hover:text-red-400 h-8 w-8 p-0"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    {company.description && (
+                      <CardDescription className="text-gray-400">
+                        {company.description}
+                      </CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-400">
+                        {getCompanyLinksCount(company.id)} links
+                      </span>
+                      {getCompanyOfflineLinksCount(company.id) > 0 && (
+                        <Badge className="bg-red-500 hover:bg-red-600">
+                          {getCompanyOfflineLinksCount(company.id)} problemas
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
 
-          {/* Links Section */}
-          <Card className="bg-saas-black-light border-saas-gray/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                Links
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Monitore seus links
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {links.length === 0 ? (
-                <p className="text-gray-400 text-center py-4">Nenhum link cadastrado</p>
-              ) : (
-                <div className="space-y-3">
-                  {links.map(link => (
-                    <div key={link.id} className="flex items-center justify-between p-3 bg-saas-black rounded-lg border border-saas-gray/20">
+        {/* Links com Problemas Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
+              <Globe className="h-6 w-6" />
+              Links com Problemas ({problematicLinks.length})
+            </h2>
+          </div>
+
+          {problematicLinks.length === 0 ? (
+            <Card className="bg-saas-black-light border-saas-gray/20">
+              <CardContent className="p-8">
+                <div className="text-center">
+                  <Globe className="h-12 w-12 text-green-400 mx-auto mb-4" />
+                  <p className="text-gray-400 mb-4">Todos os links estão funcionando! 🎉</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {problematicLinks.map(link => (
+                <Card key={link.id} className="bg-saas-black-light border-saas-gray/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="text-white font-medium">{link.name}</h3>
@@ -611,11 +693,11 @@ export default function Dashboard() {
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
