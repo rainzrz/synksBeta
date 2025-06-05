@@ -22,6 +22,18 @@ export interface Link {
   updated_at: string;
 }
 
+export interface Tool {
+  id: string;
+  name: string;
+  url: string;
+  description: string | null;
+  icon: string | null;
+  category: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Profile {
   id: string;
   name: string;
@@ -31,3 +43,13 @@ export interface Profile {
 }
 
 export type LinkStatus = "online" | "offline" | "error" | "pending";
+
+export interface DashboardStats {
+  totalCompanies: number;
+  totalLinks: number;
+  onlineLinks: number;
+  offlineLinks: number;
+  errorLinks: number;
+  pendingLinks: number;
+  averageResponseTime: number;
+}

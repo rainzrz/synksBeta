@@ -42,6 +42,11 @@ export default function Navbar() {
                 Dashboard
               </Button>
             </Link>
+            <Link to="/tools">
+              <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-saas-gray/20">
+                Ferramentas
+              </Button>
+            </Link>
           </div>
 
           {/* User Menu */}
@@ -116,6 +121,13 @@ export default function Navbar() {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Dashboard
+              </Link>
+              <Link
+                to="/tools"
+                className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-saas-gray/20 rounded-md"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Ferramentas
               </Link>
             </div>
           </div>
