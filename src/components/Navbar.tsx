@@ -6,11 +6,47 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { Code, User, Settings, LogOut, Menu, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from 'react';
+
+interface Profile {
+  id: string;
+  name: string;
+  avatar_url: string | null;
+}
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
+
+  const loadProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user?.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error loading profile in navbar:', error);
+        return;
+      }
+
+      if (data) {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('Error in loadProfile:', error);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -23,6 +59,12 @@ export default function Navbar() {
       .join('')
       .toUpperCase()
       .substring(0, 2);
+  };
+
+  const getUserDisplayName = () => {
+    if (profile?.name) return profile.name;
+    if (user?.email) return user.email.split('@')[0];
+    return 'Usuário';
   };
 
   return (
@@ -55,9 +97,9 @@ export default function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="" />
+                    <AvatarImage src={profile?.avatar_url || ''} />
                     <AvatarFallback className="bg-saas-red text-white text-sm">
-                      {user?.email ? getInitials(user.email) : 'U'}
+                      {getInitials(getUserDisplayName())}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -65,7 +107,7 @@ export default function Navbar() {
               <DropdownMenuContent className="w-56 bg-saas-black-light border-saas-gray/20" align="end">
                 <DropdownMenuLabel className="text-white">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user?.email}</p>
+                    <p className="text-sm font-medium leading-none">{getUserDisplayName()}</p>
                     <p className="text-xs leading-none text-gray-400">
                       {user?.email}
                     </p>

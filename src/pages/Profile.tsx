@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -43,18 +42,50 @@ export default function Profile() {
 
   const loadProfile = async () => {
     try {
+      console.log('Loading profile for user:', user?.id);
+      
+      // Try to get existing profile
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user?.id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      console.log('Profile query result:', { data, error });
 
-      setProfile(data);
-      setFormData(prev => ({ ...prev, name: data.name }));
+      if (error) {
+        console.error('Error loading profile:', error);
+        throw error;
+      }
+
+      if (!data) {
+        // Create profile if it doesn't exist
+        console.log('Profile not found, creating new profile');
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user?.id,
+            name: user?.email?.split('@')[0] || 'Usuário',
+            avatar_url: null
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating profile:', createError);
+          throw createError;
+        }
+
+        console.log('New profile created:', newProfile);
+        setProfile(newProfile);
+        setFormData(prev => ({ ...prev, name: newProfile.name }));
+      } else {
+        console.log('Profile loaded:', data);
+        setProfile(data);
+        setFormData(prev => ({ ...prev, name: data.name }));
+      }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('Error in loadProfile:', error);
       toast.error('Erro ao carregar perfil');
     } finally {
       setLoading(false);
@@ -70,18 +101,24 @@ export default function Profile() {
     setUploading(true);
     
     try {
+      console.log('Uploading avatar:', fileName);
+      
       // Upload file to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(fileName, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(fileName);
 
+      console.log('Avatar uploaded, public URL:', publicUrl);
       return publicUrl;
     } catch (error) {
       console.error('Error uploading avatar:', error);
