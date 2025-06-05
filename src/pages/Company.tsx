@@ -356,52 +356,57 @@ export default function Company() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {links.map(link => (
-              <Card key={link.id} className="bg-saas-black-light border-saas-gray/20">
-                <CardContent className="p-4">
+              <Card 
+                key={link.id} 
+                className="bg-saas-black-light border-saas-gray/20 cursor-pointer hover:border-saas-red/40 transition-colors"
+                onClick={() => window.open(link.url, '_blank')}
+              >
+                <CardHeader>
                   <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-white font-medium">{link.name}</h3>
-                        {getStatusBadge(link.status)}
-                      </div>
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-saas-red text-sm hover:underline flex items-center gap-1"
-                      >
-                        {link.url}
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                      {link.description && (
-                        <p className="text-gray-400 text-sm mt-1">{link.description}</p>
-                      )}
-                      {link.response_time && (
-                        <p className="text-gray-500 text-xs mt-1">
-                          Tempo de resposta: {link.response_time}ms
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
+                    <CardTitle className="text-white text-lg">{link.name}</CardTitle>
+                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => openLinkDialog(link)}
-                        className="text-gray-400 hover:text-white"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openLinkDialog(link);
+                        }}
+                        className="text-gray-400 hover:text-white h-8 w-8 p-0"
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Edit2 className="h-3 w-3" />
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleDeleteLink(link)}
-                        className="text-gray-400 hover:text-red-400"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteLink(link);
+                        }}
+                        className="text-gray-400 hover:text-red-400 h-8 w-8 p-0"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(link.status)}
+                    <ExternalLink className="h-4 w-4 text-gray-400" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <p className="text-saas-red text-sm truncate">{link.url}</p>
+                    {link.description && (
+                      <p className="text-gray-400 text-sm">{link.description}</p>
+                    )}
+                    {link.response_time && (
+                      <p className="text-gray-500 text-xs">
+                        Tempo de resposta: {link.response_time}ms
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>

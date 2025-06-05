@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -530,22 +531,22 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="space-y-8">
-          <QuickStats stats={stats} />
-          <DashboardCharts companies={companies} links={links} />
-          <MonitoringControls userId={user?.id} />
-        </div>
-
-        {/* Search Bar */}
-        <div className="mt-8 mb-6">
+        {/* Search Bar moved to top */}
+        <div className="mb-8">
           <SearchBar
             onSearch={setSearchQuery}
             placeholder="Pesquisar empresas..."
           />
         </div>
 
+        <div className="space-y-8">
+          <QuickStats stats={stats} />
+          <DashboardCharts companies={companies} links={links} />
+          <MonitoringControls userId={user?.id} />
+        </div>
+
         {/* Companies Section */}
-        <div className="mb-8">
+        <div className="mb-8 mt-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
               <Building2 className="h-6 w-6" />
