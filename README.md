@@ -43,6 +43,9 @@ SystemHaus é uma plataforma completa para gerenciamento de empresas, links e fe
 - **Tailwind CSS** - Estilização
 - **Shadcn/UI** - Componentes de interface
 - **React Router** - Navegação
+- **TanStack Query** - Gerenciamento de estado e cache
+- **React Hook Form** - Formulários
+- **Zod** - Validação de dados
 - **Vite** - Build tool
 - **Sonner** - Notificações toast
 
@@ -64,7 +67,6 @@ SystemHaus é uma plataforma completa para gerenciamento de empresas, links e fe
 ### Pré-requisitos
 - Node.js 18+
 - Docker e Docker Compose
-- PostgreSQL (se não usar Docker)
 
 ### Com Docker (Recomendado)
 
@@ -85,7 +87,7 @@ cp .env.example .env
 docker-compose up -d
 ```
 
-4. A aplicação estará disponível em `http://localhost:8080`
+4. A aplicação estará disponível em `http://localhost`
 
 ### Instalação Manual
 
@@ -110,7 +112,7 @@ npm install
 cd backend
 npm start
 
-# Frontend (porta 8080)
+# Frontend (porta 5173 em dev)
 npm run dev
 ```
 
@@ -119,18 +121,20 @@ npm run dev
 ```
 ├── src/                    # Frontend React
 │   ├── components/         # Componentes reutilizáveis
+│   │   └── ui/            # Componentes Shadcn/UI
 │   ├── pages/             # Páginas da aplicação
 │   ├── contexts/          # Contextos React
 │   ├── hooks/             # Hooks customizados
 │   ├── lib/               # Utilitários e configurações
-│   └── types/             # Definições TypeScript
+│   ├── types/             # Definições TypeScript
+│   └── utils/             # Funções utilitárias
 ├── backend/               # Backend Node.js
-│   ├── src/
-│   │   ├── routes/        # Rotas da API
-│   │   ├── middleware/    # Middlewares
-│   │   └── config/        # Configurações
-│   └── uploads/           # Arquivos enviados
+│   └── src/
+│       ├── routes/        # Rotas da API
+│       ├── middleware/    # Middlewares
+│       └── config/        # Configurações
 ├── database/              # Scripts SQL
+├── scripts/               # Scripts utilitários
 ├── nginx.conf             # Configuração Nginx
 └── docker-compose.yml     # Orquestração Docker
 ```
@@ -169,6 +173,43 @@ npm run dev
 ### Upload
 - `POST /api/upload` - Upload de arquivos
 
+## Configuração de Desenvolvimento
+
+### Variáveis de Ambiente
+
+```env
+# Database
+DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/monitor_links
+POSTGRES_DB=monitor_links
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres123
+
+# JWT
+JWT_SECRET=your-jwt-secret-super-secure
+
+# Server
+NODE_ENV=development
+PORT=3001
+```
+
+### Scripts Úteis
+
+```bash
+# Desenvolvimento
+npm run dev                 # Inicia frontend em modo dev
+npm run build              # Build do frontend
+npm run preview            # Preview do build
+
+# Backend
+cd backend && npm start    # Inicia backend
+cd backend && npm run dev  # Backend em modo dev
+
+# Docker
+docker-compose up -d       # Inicia todos os serviços
+docker-compose logs -f     # Visualiza logs
+docker-compose down        # Para todos os serviços
+```
+
 ## Funcionalidades Principais
 
 ### Sistema de Autenticação
@@ -195,42 +236,11 @@ npm run dev
 - Limite de tamanho (10MB)
 - Armazenamento local
 
-## Configuração de Desenvolvimento
+## URLs de Acesso
 
-### Variáveis de Ambiente
-
-```env
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=systemhaus
-DB_USER=postgres
-DB_PASSWORD=postgres
-
-# JWT
-JWT_SECRET=your-jwt-secret
-
-# Server
-PORT=3001
-```
-
-### Scripts Úteis
-
-```bash
-# Desenvolvimento
-npm run dev                 # Inicia frontend em modo dev
-npm run build              # Build do frontend
-npm run preview            # Preview do build
-
-# Backend
-cd backend && npm start    # Inicia backend
-cd backend && npm run dev  # Backend em modo dev
-
-# Docker
-docker-compose up -d       # Inicia todos os serviços
-docker-compose logs -f     # Visualiza logs
-docker-compose down        # Para todos os serviços
-```
+- **Frontend**: http://localhost (com Docker) ou http://localhost:5173 (desenvolvimento)
+- **Backend API**: http://localhost:3001
+- **PostgreSQL**: localhost:5432
 
 ## Backup e Deploy
 
@@ -243,6 +253,25 @@ docker-compose down        # Para todos os serviços
 ```bash
 ./scripts/deploy.sh
 ```
+
+## Troubleshooting
+
+### Problemas Comuns
+
+1. **Container não inicia**:
+   ```bash
+   docker-compose logs nome_do_servico
+   ```
+
+2. **Problemas de conexão com banco**:
+   ```bash
+   docker-compose exec postgres pg_isready -U postgres
+   ```
+
+3. **Permissões de scripts**:
+   ```bash
+   chmod +x scripts/*.sh
+   ```
 
 ## Contribuição
 
