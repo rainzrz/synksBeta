@@ -505,27 +505,23 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Search Bar moved to top */}
-        <div className="mb-8">
-          <SearchBar
-            onSearch={setSearchQuery}
-            placeholder="Pesquisar empresas..."
-          />
-        </div>
-
         <div className="space-y-8">
           <QuickStats stats={stats} />
           <DashboardCharts companies={companies} links={links} />
           <MonitoringControls userId={user?.id} />
         </div>
 
-        {/* Companies Section */}
+        {/* Companies Section with Search Bar */}
         <div className="mb-8 mt-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
               <Building2 className="h-6 w-6" />
               Empresas ({filteredCompanies.length})
             </h2>
+            <SearchBar
+              onSearch={setSearchQuery}
+              placeholder="Pesquisar empresas..."
+            />
           </div>
 
           {filteredCompanies.length === 0 ? (

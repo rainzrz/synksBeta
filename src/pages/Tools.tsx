@@ -314,37 +314,34 @@ export default function Tools() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {categoryTools.map((tool) => (
-                    <Card key={tool.id} className="bg-saas-black-light border-saas-gray/20">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-3">
+                    <Card 
+                      key={tool.id} 
+                      className="bg-saas-black-light border-saas-gray/20 cursor-pointer hover:border-saas-red/40 transition-colors"
+                      onClick={() => window.open(tool.url, '_blank')}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex justify-between items-start">
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-white truncate">{tool.name}</h4>
+                            <CardTitle className="text-white text-lg truncate">{tool.name}</CardTitle>
                             <a 
                               href={tool.url} 
                               target="_blank" 
                               rel="noopener noreferrer" 
                               className="text-xs text-blue-400 hover:underline truncate block mt-1"
+                              onClick={(e) => e.stopPropagation()}
                             >
                               {tool.url}
                             </a>
-                            {tool.description && (
-                              <p className="text-xs text-gray-400 mt-1 line-clamp-2">{tool.description}</p>
-                            )}
                           </div>
                           <div className="flex gap-1 ml-2">
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-                              onClick={() => window.open(tool.url, '_blank')}
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
                               className="h-6 w-6 p-0 text-blue-400 hover:text-blue-300"
-                              onClick={() => openEditDialog(tool)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditDialog(tool);
+                              }}
                             >
                               <Edit className="h-3 w-3" />
                             </Button>
@@ -352,11 +349,25 @@ export default function Tools() {
                               size="sm"
                               variant="ghost"
                               className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
-                              onClick={() => deleteTool(tool.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteTool(tool.id);
+                              }}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        {tool.description && (
+                          <p className="text-xs text-gray-400 line-clamp-2">{tool.description}</p>
+                        )}
+                        <div className="flex items-center justify-between mt-3">
+                          <span className="text-xs text-gray-500 bg-saas-gray/20 px-2 py-1 rounded">
+                            {tool.category}
+                          </span>
+                          <ExternalLink className="h-3 w-3 text-gray-400" />
                         </div>
                       </CardContent>
                     </Card>
