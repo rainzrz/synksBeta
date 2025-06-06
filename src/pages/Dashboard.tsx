@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, ExternalLink, Building2, Globe, Loader2 } from 'lucide-react';
@@ -87,25 +87,19 @@ export default function Dashboard() {
       setLoading(true);
       
       // Load companies
-      const { data: companiesData, error: companiesError } = await supabase
-        .from('companies')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (companiesError) throw companiesError;
+      const companiesResponse = await apiClient.getCompanies();
+      if (companiesResponse.error) {
+        throw new Error(companiesResponse.error);
+      }
 
       // Load links
-      const { data: linksData, error: linksError } = await supabase
-        .from('links')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+      const linksResponse = await apiClient.getLinks();
+      if (linksResponse.error) {
+        throw new Error(linksResponse.error);
+      }
 
-      if (linksError) throw linksError;
-
-      setCompanies(companiesData || []);
-      setLinks((linksData || []).map(link => ({
+      setCompanies(companiesResponse.data || []);
+      setLinks((linksResponse.data || []).map(link => ({
         ...link,
         status: link.status as 'online' | 'offline' | 'error' | 'pending'
       })));
@@ -133,19 +127,16 @@ export default function Dashboard() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('companies')
-        .insert({
-          name: companyForm.name,
-          description: companyForm.description || null,
-          user_id: user?.id
-        })
-        .select()
-        .single();
+      const response = await apiClient.createCompany({
+        name: companyForm.name,
+        description: companyForm.description || undefined
+      });
 
-      if (error) throw error;
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
-      setCompanies(prev => [data, ...prev]);
+      setCompanies(prev => [response.data, ...prev]);
       setCompanyForm({ name: '', description: '' });
       setShowCompanyDialog(false);
       toast.success('Empresa criada com sucesso!');
@@ -159,21 +150,17 @@ export default function Dashboard() {
     if (!editingCompany || !companyForm.name.trim()) return;
 
     try {
-      const { data, error } = await supabase
-        .from('companies')
-        .update({
-          name: companyForm.name,
-          description: companyForm.description || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', editingCompany.id)
-        .select()
-        .single();
+      const response = await apiClient.updateCompany(editingCompany.id, {
+        name: companyForm.name,
+        description: companyForm.description || undefined
+      });
 
-      if (error) throw error;
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
       setCompanies(prev => prev.map(company => 
-        company.id === editingCompany.id ? data : company
+        company.id === editingCompany.id ? response.data : company
       ));
       setEditingCompany(null);
       setCompanyForm({ name: '', description: '' });
@@ -189,12 +176,10 @@ export default function Dashboard() {
     if (!confirm(`Tem certeza que deseja excluir a empresa "${company.name}"?`)) return;
 
     try {
-      const { error } = await supabase
-        .from('companies')
-        .delete()
-        .eq('id', company.id);
-
-      if (error) throw error;
+      const response = await apiClient.deleteCompany(company.id);
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
       setCompanies(prev => prev.filter(c => c.id !== company.id));
       setLinks(prev => prev.filter(l => l.company_id !== company.id));
@@ -217,23 +202,20 @@ export default function Dashboard() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('links')
-        .insert({
-          name: linkForm.name,
-          url: linkForm.url,
-          description: linkForm.description || null,
-          company_id: linkForm.company_id,
-          user_id: user?.id
-        })
-        .select()
-        .single();
+      const response = await apiClient.createLink({
+        name: linkForm.name,
+        url: linkForm.url,
+        description: linkForm.description || undefined,
+        company_id: linkForm.company_id
+      });
 
-      if (error) throw error;
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
       setLinks(prev => [{
-        ...data,
-        status: data.status as 'online' | 'offline' | 'error' | 'pending'
+        ...response.data,
+        status: response.data.status as 'online' | 'offline' | 'error' | 'pending'
       }, ...prev]);
       setLinkForm({ name: '', url: '', description: '', company_id: '' });
       setShowLinkDialog(false);
@@ -245,7 +227,7 @@ export default function Dashboard() {
   };
 
   const handleUpdateLink = async () => {
-    if (!editingLink || !linkForm.name.trim() || !linkForm.url.trim() || !linkForm.company_id) return;
+    if (!editingLink || !linkForm.name.trim() || !linkForm.url.trim()) return;
 
     if (!validateUrl(linkForm.url)) {
       toast.error('URL deve começar com http:// ou https://');
@@ -253,25 +235,20 @@ export default function Dashboard() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('links')
-        .update({
-          name: linkForm.name,
-          url: linkForm.url,
-          description: linkForm.description || null,
-          company_id: linkForm.company_id,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', editingLink.id)
-        .select()
-        .single();
+      const response = await apiClient.updateLink(editingLink.id, {
+        name: linkForm.name,
+        url: linkForm.url,
+        description: linkForm.description || undefined
+      });
 
-      if (error) throw error;
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
       setLinks(prev => prev.map(link => 
         link.id === editingLink.id ? {
-          ...data,
-          status: data.status as 'online' | 'offline' | 'error' | 'pending'
+          ...response.data,
+          status: response.data.status as 'online' | 'offline' | 'error' | 'pending'
         } : link
       ));
       setEditingLink(null);
@@ -288,12 +265,10 @@ export default function Dashboard() {
     if (!confirm(`Tem certeza que deseja excluir o link "${link.name}"?`)) return;
 
     try {
-      const { error } = await supabase
-        .from('links')
-        .delete()
-        .eq('id', link.id);
-
-      if (error) throw error;
+      const response = await apiClient.deleteLink(link.id);
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
       setLinks(prev => prev.filter(l => l.id !== link.id));
       toast.success('Link excluído com sucesso!');

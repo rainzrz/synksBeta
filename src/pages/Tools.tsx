@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Wrench, Plus, Trash2, Edit, ExternalLink, Settings } from 'lucide-react';
@@ -55,15 +55,11 @@ export default function Tools() {
 
   const loadTools = async () => {
     try {
-      // Using any type temporarily until Supabase types are updated
-      const { data, error } = await (supabase as any)
-        .from('tools')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setTools(data || []);
+      const response = await apiClient.getTools();
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      setTools(response.data || []);
     } catch (error) {
       console.error('Error loading tools:', error);
       toast.error('Erro ao carregar ferramentas');
@@ -90,24 +86,19 @@ export default function Tools() {
     if (!newTool.name.trim() || !newTool.url.trim() || !user) return;
 
     try {
-      const { data, error } = await (supabase as any)
-        .from('tools')
-        .insert([
-          {
-            name: newTool.name,
-            url: newTool.url,
-            description: newTool.description,
-            category: newTool.category || 'Outros',
-            icon: newTool.icon,
-            user_id: user.id,
-          },
-        ])
-        .select()
-        .single();
+      const response = await apiClient.createTool({
+        name: newTool.name,
+        url: newTool.url,
+        description: newTool.description,
+        category: newTool.category || 'Outros',
+        icon: newTool.icon,
+      });
 
-      if (error) throw error;
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
-      setTools(prev => [data, ...prev]);
+      setTools(prev => [response.data, ...prev]);
       setNewTool({ name: '', url: '', description: '', category: '', icon: '' });
       setIsDialogOpen(false);
       toast.success('Ferramenta criada com sucesso!');
@@ -121,23 +112,20 @@ export default function Tools() {
     if (!editingTool || !newTool.name.trim() || !newTool.url.trim()) return;
 
     try {
-      const { data, error } = await (supabase as any)
-        .from('tools')
-        .update({
-          name: newTool.name,
-          url: newTool.url,
-          description: newTool.description,
-          category: newTool.category || 'Outros',
-          icon: newTool.icon,
-        })
-        .eq('id', editingTool.id)
-        .select()
-        .single();
+      const response = await apiClient.updateTool(editingTool.id, {
+        name: newTool.name,
+        url: newTool.url,
+        description: newTool.description,
+        category: newTool.category || 'Outros',
+        icon: newTool.icon,
+      });
 
-      if (error) throw error;
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
       setTools(prev => prev.map(tool => 
-        tool.id === editingTool.id ? data : tool
+        tool.id === editingTool.id ? response.data : tool
       ));
       setEditingTool(null);
       setNewTool({ name: '', url: '', description: '', category: '', icon: '' });
@@ -151,12 +139,10 @@ export default function Tools() {
 
   const deleteTool = async (toolId: string) => {
     try {
-      const { error } = await (supabase as any)
-        .from('tools')
-        .delete()
-        .eq('id', toolId);
-
-      if (error) throw error;
+      const response = await apiClient.deleteTool(toolId);
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
       setTools(prev => prev.filter(t => t.id !== toolId));
       toast.success('Ferramenta excluída com sucesso!');

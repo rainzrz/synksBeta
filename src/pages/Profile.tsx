@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Camera, Loader2 } from 'lucide-react';
@@ -20,12 +21,10 @@ interface Profile {
 export default function Profile() {
   const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -44,45 +43,15 @@ export default function Profile() {
     try {
       console.log('Loading profile for user:', user?.id);
       
-      // Try to get existing profile
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user?.id)
-        .maybeSingle();
-
-      console.log('Profile query result:', { data, error });
-
-      if (error) {
-        console.error('Error loading profile:', error);
-        throw error;
+      const response = await apiClient.getProfile();
+      if (response.error) {
+        throw new Error(response.error);
       }
 
-      if (!data) {
-        // Create profile if it doesn't exist
-        console.log('Profile not found, creating new profile');
-        const { data: newProfile, error: createError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user?.id,
-            name: user?.email?.split('@')[0] || 'Usuário',
-            avatar_url: null
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating profile:', createError);
-          throw createError;
-        }
-
-        console.log('New profile created:', newProfile);
-        setProfile(newProfile);
-        setFormData(prev => ({ ...prev, name: newProfile.name }));
-      } else {
-        console.log('Profile loaded:', data);
-        setProfile(data);
-        setFormData(prev => ({ ...prev, name: data.name }));
+      if (response.data) {
+        console.log('Profile loaded:', response.data);
+        setProfile(response.data);
+        setFormData(prev => ({ ...prev, name: response.data.name }));
       }
     } catch (error) {
       console.error('Error in loadProfile:', error);
@@ -92,138 +61,22 @@ export default function Profile() {
     }
   };
 
-  const uploadAvatar = async (file: File) => {
-    if (!user) return null;
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}/avatar.${fileExt}`;
-
-    setUploading(true);
-    
-    try {
-      console.log('Uploading avatar:', fileName);
-      
-      // Upload file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw uploadError;
-      }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      console.log('Avatar uploaded, public URL:', publicUrl);
-      return publicUrl;
-    } catch (error) {
-      console.error('Error uploading avatar:', error);
-      toast.error('Erro ao fazer upload da imagem');
-      return null;
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Por favor, selecione uma imagem');
-      return;
-    }
-
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('A imagem deve ter no máximo 2MB');
-      return;
-    }
-
-    const avatarUrl = await uploadAvatar(file);
-    
-    if (avatarUrl) {
-      try {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ avatar_url: avatarUrl })
-          .eq('id', user.id);
-
-        if (error) throw error;
-
-        setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
-        toast.success('Foto de perfil atualizada!');
-      } catch (error) {
-        console.error('Error updating avatar:', error);
-        toast.error('Erro ao atualizar foto de perfil');
-      }
-    }
-  };
-
   const updateProfileData = async () => {
     if (!user || !formData.name.trim()) return;
 
     setSaving(true);
     
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ name: formData.name })
-        .eq('id', user.id);
-
-      if (error) throw error;
+      const response = await apiClient.updateProfile({ name: formData.name });
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
       setProfile(prev => prev ? { ...prev, name: formData.name } : null);
       toast.success('Perfil atualizado com sucesso!');
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Erro ao atualizar perfil');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const updatePassword = async () => {
-    if (!formData.currentPassword || !formData.newPassword) {
-      toast.error('Preencha todos os campos de senha');
-      return;
-    }
-
-    if (formData.newPassword !== formData.confirmPassword) {
-      toast.error('A confirmação de senha não confere');
-      return;
-    }
-
-    if (formData.newPassword.length < 6) {
-      toast.error('A nova senha deve ter pelo menos 6 caracteres');
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: formData.newPassword
-      });
-
-      if (error) throw error;
-
-      setFormData(prev => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      }));
-      
-      toast.success('Senha atualizada com sucesso!');
-    } catch (error) {
-      console.error('Error updating password:', error);
-      toast.error('Erro ao atualizar senha');
     } finally {
       setSaving(false);
     }
@@ -263,7 +116,7 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle className="text-white">Informações do Perfil</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Atualize sua foto e informações pessoais
+                  Atualize suas informações pessoais
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -276,31 +129,18 @@ export default function Profile() {
                         {profile?.name ? getInitials(profile.name) : 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    {uploading && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
-                        <Loader2 className="h-5 w-5 animate-spin text-white" />
-                      </div>
-                    )}
                   </div>
                   <div>
                     <Button
                       variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="border-saas-gray/20 text-gray-300 hover:text-white hover:bg-saas-gray/20"
+                      disabled
+                      className="border-saas-gray/20 text-gray-500 cursor-not-allowed"
                     >
                       <Camera className="mr-2 h-4 w-4" />
-                      {uploading ? 'Enviando...' : 'Alterar Foto'}
+                      Upload de foto não disponível
                     </Button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className="hidden"
-                    />
                     <p className="text-xs text-gray-500 mt-1">
-                      JPG, PNG ou GIF (máx. 2MB)
+                      Funcionalidade em desenvolvimento
                     </p>
                   </div>
                 </div>
@@ -349,7 +189,7 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle className="text-white">Alterar Senha</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Atualize sua senha para manter sua conta segura
+                  Funcionalidade em desenvolvimento
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -361,6 +201,7 @@ export default function Profile() {
                     value={formData.currentPassword}
                     onChange={(e) => setFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
                     className="bg-saas-black border-saas-gray/20 text-white"
+                    disabled
                   />
                 </div>
 
@@ -372,6 +213,7 @@ export default function Profile() {
                     value={formData.newPassword}
                     onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
                     className="bg-saas-black border-saas-gray/20 text-white"
+                    disabled
                   />
                 </div>
 
@@ -383,22 +225,15 @@ export default function Profile() {
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     className="bg-saas-black border-saas-gray/20 text-white"
+                    disabled
                   />
                 </div>
 
                 <Button 
-                  onClick={updatePassword}
-                  disabled={saving}
-                  className="bg-saas-red hover:bg-saas-red-dark text-white"
+                  disabled
+                  className="bg-gray-500 cursor-not-allowed text-white"
                 >
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Atualizando...
-                    </>
-                  ) : (
-                    'Alterar Senha'
-                  )}
+                  Alterar Senha (Em desenvolvimento)
                 </Button>
               </CardContent>
             </Card>
