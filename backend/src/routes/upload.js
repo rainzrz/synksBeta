@@ -27,7 +27,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit (increased from 2MB)
+    fileSize: 5 * 1024 * 1024, // 5MB limit (reduced from 10MB)
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -49,8 +49,24 @@ router.post('/', authenticateToken, upload.single('file'), (req, res) => {
     res.json({ url: fileUrl });
   } catch (error) {
     console.error('Upload error:', error);
+    
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'File too large. Maximum size is 5MB.' });
+    }
+    
     res.status(500).json({ error: 'Upload failed' });
   }
+});
+
+// Handle multer errors
+router.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'File too large. Maximum size is 5MB.' });
+    }
+  }
+  
+  res.status(500).json({ error: 'Upload failed' });
 });
 
 module.exports = router;

@@ -14,9 +14,9 @@ export const useFileUpload = () => {
       return null;
     }
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('O arquivo deve ter no máximo 10MB');
+    // Validate file size (max 5MB - reduced from 10MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('O arquivo deve ter no máximo 5MB');
       return null;
     }
 
@@ -26,7 +26,10 @@ export const useFileUpload = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/upload', {
+      // Use correct API URL
+      const apiUrl = import.meta.env.DEV ? 'http://localhost:3001/api' : '/api';
+      
+      const response = await fetch(`${apiUrl}/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -35,6 +38,9 @@ export const useFileUpload = () => {
       });
 
       if (!response.ok) {
+        if (response.status === 413) {
+          throw new Error('Arquivo muito grande. Máximo 5MB.');
+        }
         throw new Error('Erro no upload');
       }
 
@@ -42,7 +48,7 @@ export const useFileUpload = () => {
       return data.url;
     } catch (error) {
       console.error('Error uploading file:', error);
-      toast.error('Erro ao fazer upload da imagem');
+      toast.error(error instanceof Error ? error.message : 'Erro ao fazer upload da imagem');
       return null;
     } finally {
       setUploading(false);
