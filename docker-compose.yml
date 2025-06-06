@@ -21,7 +21,7 @@ services:
     build: ./backend
     container_name: monitor_backend
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/monitor_links
       JWT_SECRET: seu_jwt_secret_super_seguro_aqui
       PORT: 3001
