@@ -24,9 +24,14 @@ const AvatarImage = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
 >(({ className, src, ...props }, ref) => {
   // Build the absolute URL for the image
-  const imageUrl = src && src.startsWith('/uploads/') 
-    ? `${import.meta.env.DEV ? 'http://localhost:3001' : ''}${src}`
-    : src;
+  let imageUrl = src;
+  
+  if (src && src.startsWith('/uploads/')) {
+    const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : window.location.origin;
+    imageUrl = `${baseUrl}${src}`;
+  }
+
+  console.log('Avatar image URL:', imageUrl);
 
   return (
     <AvatarPrimitive.Image

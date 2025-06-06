@@ -1,217 +1,267 @@
 
-<div align="center">
-  <h1>🔗 Monitor de Links</h1>
-  <p><strong>Sistema completo de monitoramento de links e websites</strong></p>
-  
-  <img src="https://img.shields.io/badge/React-18.3.1-blue?style=for-the-badge&logo=react" alt="React">
-  <img src="https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Supabase-green?style=for-the-badge&logo=supabase" alt="Supabase">
-  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css" alt="Tailwind CSS">
-  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite" alt="Vite">
-</div>
+# SystemHaus - Plataforma de Gerenciamento de Empresas e Links
 
----
+## Descrição
 
-## 📋 Sobre o Projeto
+SystemHaus é uma plataforma completa para gerenciamento de empresas, links e ferramentas. Permite monitoramento de status de links, organização de recursos por empresa e gestão centralizada de ferramentas.
 
-O **Monitor de Links** é uma aplicação web moderna desenvolvida para monitorar a disponibilidade e performance de websites e serviços online. Com uma interface intuitiva e elegante, permite que usuários organizem seus links por empresas e acompanhem o status em tempo real.
+## Funcionalidades
 
-### ✨ Funcionalidades Principais
+### 📊 Dashboard
+- Visão geral de todas as empresas
+- Estatísticas de links e status
+- Cards clicáveis para navegação rápida
 
-- 🏢 **Gestão de Empresas**: Organize seus links por empresas
-- 🔗 **Monitoramento de Links**: Acompanhe status (online/offline/erro)
-- ⚡ **Tempo de Resposta**: Monitore a performance dos seus sites
-- 👤 **Sistema de Autenticação**: Login seguro com Supabase Auth
-- 📊 **Dashboard Intuitivo**: Visualize estatísticas e métricas
-- 🎨 **Interface Moderna**: Design responsivo com Tailwind CSS
-- 🔔 **Notificações**: Alertas em tempo real sobre mudanças de status
+### 🏢 Gerenciamento de Empresas
+- Criação e edição de empresas
+- Pesquisa e filtros avançados
+- Organização por categorias
 
----
+### 🔗 Monitoramento de Links
+- Verificação automática de status dos links
+- Indicadores visuais de saúde (online/offline)
+- Organização por empresa
+- Histórico de verificações
 
-## 🛠️ Tecnologias Utilizadas
+### 🛠️ Ferramentas
+- Catálogo de ferramentas organizadas por categoria
+- Cards clicáveis para acesso direto
+- Gerenciamento completo (criar, editar, excluir)
+- Categorias: Automação, Monitoramento, Análise, Desenvolvimento, Comunicação, Produtividade
+
+### 👤 Perfil de Usuário
+- Upload de foto de perfil
+- Edição de informações pessoais
+- Alteração de senha
+- Sistema de autenticação seguro
+
+## Tecnologias
 
 ### Frontend
-- **React 18.3** - Biblioteca para interfaces de usuário
-- **TypeScript** - Tipagem estática para JavaScript
-- **Vite** - Build tool moderna e rápida
-- **Tailwind CSS** - Framework CSS utilitário
-- **shadcn/ui** - Componentes UI modernos
-- **React Router** - Roteamento client-side
-- **TanStack Query** - Gerenciamento de estado server
+- **React 18** - Framework principal
+- **TypeScript** - Tipagem estática
+- **Tailwind CSS** - Estilização
+- **Shadcn/UI** - Componentes de interface
+- **React Router** - Navegação
+- **Vite** - Build tool
+- **Sonner** - Notificações toast
 
-### Backend & Banco de Dados
-- **Supabase** - Backend-as-a-Service
-- **PostgreSQL** - Banco de dados relacional
-- **Row Level Security (RLS)** - Segurança ao nível de linha
+### Backend
+- **Node.js** - Runtime
+- **Express.js** - Framework web
+- **PostgreSQL** - Banco de dados
+- **JWT** - Autenticação
+- **Multer** - Upload de arquivos
+- **bcrypt** - Criptografia de senhas
 
-### Outras Ferramentas
-- **Lucide React** - Ícones modernos
-- **React Hook Form** - Gerenciamento de formulários
-- **Sonner** - Sistema de notificações toast
-- **Zod** - Validação de schemas
+### Infraestrutura
+- **Docker** - Containerização
+- **Docker Compose** - Orquestração
+- **Nginx** - Proxy reverso
 
----
-
-## 🚀 Como Executar o Projeto
+## Instalação
 
 ### Pré-requisitos
+- Node.js 18+
+- Docker e Docker Compose
+- PostgreSQL (se não usar Docker)
 
-Certifique-se de ter instalado:
-- **Node.js** (versão 18 ou superior)
-- **npm** ou **yarn**
-- Conta no **Supabase**
+### Com Docker (Recomendado)
 
-### Instalação
-
-1. **Clone o repositório**
-   ```bash
-   git clone <URL_DO_SEU_REPOSITORIO>
-   cd monitor-de-links
-   ```
-
-2. **Instale as dependências**
-   ```bash
-   npm install
-   ```
-
-3. **Configure as variáveis de ambiente**
-   
-   Crie um arquivo `.env.local` na raiz do projeto:
-   ```env
-   VITE_SUPABASE_URL=sua_url_do_supabase
-   VITE_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
-   ```
-
-4. **Execute o projeto**
-   ```bash
-   npm run dev
-   ```
-
-5. **Acesse a aplicação**
-   
-   Abra seu navegador e acesse: `http://localhost:5173`
-
----
-
-## 📦 Scripts Disponíveis
-
+1. Clone o repositório:
 ```bash
-# Executar em modo de desenvolvimento
-npm run dev
-
-# Criar build de produção
-npm run build
-
-# Fazer preview do build
-npm run preview
-
-# Executar linting
-npm run lint
+git clone <repository-url>
+cd systemhaus
 ```
 
----
+2. Configure as variáveis de ambiente:
+```bash
+cp .env.example .env
+# Edite o arquivo .env com suas configurações
+```
 
-## 🗃️ Estrutura do Banco de Dados
+3. Inicie os serviços:
+```bash
+docker-compose up -d
+```
 
-### Tabelas Principais
+4. A aplicação estará disponível em `http://localhost:8080`
 
-#### `companies`
-- Armazena informações das empresas
-- Relacionada ao usuário autenticado
+### Instalação Manual
 
-#### `links`
-- Armazena os links para monitoramento
-- Relacionada às empresas e usuários
-- Campos de status e tempo de resposta
+1. Configure o banco de dados PostgreSQL
+2. Execute o script de inicialização: `database/init.sql`
+3. Instale as dependências:
 
-#### `profiles`
-- Perfis dos usuários
-- Informações adicionais do usuário
+```bash
+# Frontend
+npm install
 
----
+# Backend
+cd backend
+npm install
+```
 
-## 🎨 Design System
+4. Configure as variáveis de ambiente nos arquivos `.env`
+5. Inicie os serviços:
 
-O projeto utiliza um design system consistente baseado em:
+```bash
+# Backend (porta 3001)
+cd backend
+npm start
 
-- **Cores Principais**: 
-  - `saas-black` - Fundo principal
-  - `saas-red` - Cor de destaque
-  - `saas-gray` - Elementos secundários
+# Frontend (porta 8080)
+npm run dev
+```
 
-- **Tipografia**: Sistema de fontes moderno e legível
-- **Componentes**: Baseados no shadcn/ui com customizações
+## Estrutura do Projeto
 
----
+```
+├── src/                    # Frontend React
+│   ├── components/         # Componentes reutilizáveis
+│   ├── pages/             # Páginas da aplicação
+│   ├── contexts/          # Contextos React
+│   ├── hooks/             # Hooks customizados
+│   ├── lib/               # Utilitários e configurações
+│   └── types/             # Definições TypeScript
+├── backend/               # Backend Node.js
+│   ├── src/
+│   │   ├── routes/        # Rotas da API
+│   │   ├── middleware/    # Middlewares
+│   │   └── config/        # Configurações
+│   └── uploads/           # Arquivos enviados
+├── database/              # Scripts SQL
+├── nginx.conf             # Configuração Nginx
+└── docker-compose.yml     # Orquestração Docker
+```
 
-## 🔧 Configuração do Supabase
-
-### Políticas RLS (Row Level Security)
-
-O projeto utiliza políticas de segurança para garantir que:
-- Usuários só vejam suas próprias empresas
-- Usuários só gerenciem seus próprios links
-- Dados são protegidos ao nível de linha
+## API Endpoints
 
 ### Autenticação
+- `POST /api/auth/login` - Login de usuário
+- `POST /api/auth/register` - Registro de usuário
+- `PUT /api/auth/change-password` - Alteração de senha
 
-- Login com email/senha
-- Registro de novos usuários
-- Recuperação de senha
-- Sessões persistentes
+### Perfil
+- `GET /api/profile` - Obter perfil do usuário
+- `PUT /api/profile` - Atualizar perfil
 
----
+### Empresas
+- `GET /api/companies` - Listar empresas
+- `POST /api/companies` - Criar empresa
+- `PUT /api/companies/:id` - Atualizar empresa
+- `DELETE /api/companies/:id` - Excluir empresa
 
-## 🚀 Deploy
+### Links
+- `GET /api/links` - Listar todos os links
+- `GET /api/links/company/:id` - Links de uma empresa
+- `POST /api/links` - Criar link
+- `PUT /api/links/:id` - Atualizar link
+- `DELETE /api/links/:id` - Excluir link
+- `POST /api/links/:id/check` - Verificar status do link
 
-### Opções de Deploy
+### Ferramentas
+- `GET /api/tools` - Listar ferramentas
+- `POST /api/tools` - Criar ferramenta
+- `PUT /api/tools/:id` - Atualizar ferramenta
+- `DELETE /api/tools/:id` - Excluir ferramenta
 
-1. **Vercel** (Recomendado)
-   ```bash
-   npm run build
-   # Deploy via Vercel CLI ou GitHub integration
-   ```
+### Upload
+- `POST /api/upload` - Upload de arquivos
 
-2. **Netlify**
-   ```bash
-   npm run build
-   # Deploy da pasta dist/
-   ```
+## Funcionalidades Principais
 
-3. **Docker + Nginx**
-   - Dockerização completa disponível
-   - Configuração para produção incluída
+### Sistema de Autenticação
+- Registro e login de usuários
+- Tokens JWT para autenticação
+- Middleware de proteção de rotas
+- Alteração segura de senhas
 
----
+### Monitoramento de Links
+- Verificação automática de status HTTP
+- Indicadores visuais (verde/vermelho)
+- Histórico de última verificação
+- Organização por empresa
 
-## 🤝 Contribuindo
+### Gestão de Empresas
+- CRUD completo de empresas
+- Pesquisa e filtros
+- Associação com links
+- Contadores de links por empresa
+
+### Upload de Arquivos
+- Sistema seguro de upload
+- Validação de tipos de arquivo
+- Limite de tamanho (10MB)
+- Armazenamento local
+
+## Configuração de Desenvolvimento
+
+### Variáveis de Ambiente
+
+```env
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=systemhaus
+DB_USER=postgres
+DB_PASSWORD=postgres
+
+# JWT
+JWT_SECRET=your-jwt-secret
+
+# Server
+PORT=3001
+```
+
+### Scripts Úteis
+
+```bash
+# Desenvolvimento
+npm run dev                 # Inicia frontend em modo dev
+npm run build              # Build do frontend
+npm run preview            # Preview do build
+
+# Backend
+cd backend && npm start    # Inicia backend
+cd backend && npm run dev  # Backend em modo dev
+
+# Docker
+docker-compose up -d       # Inicia todos os serviços
+docker-compose logs -f     # Visualiza logs
+docker-compose down        # Para todos os serviços
+```
+
+## Backup e Deploy
+
+### Backup do Banco
+```bash
+./scripts/backup.sh
+```
+
+### Deploy
+```bash
+./scripts/deploy.sh
+```
+
+## Contribuição
 
 1. Fork o projeto
 2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
+3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
 4. Push para a branch (`git push origin feature/nova-feature`)
 5. Abra um Pull Request
 
----
+## Licença
 
-## 📄 Licença
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+## Suporte
 
----
-
-## 🆘 Suporte
-
-Se você encontrar algum problema ou tiver sugestões:
-
-1. **Issues**: Abra uma issue no GitHub
-2. **Documentação**: Consulte a documentação do Supabase
-3. **Comunidade**: Participe da comunidade Lovable no Discord
+Para suporte e dúvidas:
+- Abra uma issue no GitHub
+- Entre em contato através do email: suporte@systemhaus.com
 
 ---
 
-<div align="center">
-  <p>Desenvolvido com ❤️ usando <a href="https://lovable.dev">Lovable</a></p>
-  
-  **[🌐 Ver Demo](https://lovable.dev/projects/3f0cf4db-6c1d-4c9a-b353-38a26742e951) | [📚 Documentação](https://docs.lovable.dev/) | [💬 Discord](https://discord.com/channels/1119885301872070706/1280461670979993613)**
-</div>
+Desenvolvido com ❤️ pela equipe SystemHaus

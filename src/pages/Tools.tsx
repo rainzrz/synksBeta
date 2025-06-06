@@ -170,6 +170,12 @@ export default function Tools() {
     setNewTool({ name: '', url: '', description: '', category: '', icon: '' });
   };
 
+  const openCreateDialog = () => {
+    setEditingTool(null);
+    setNewTool({ name: '', url: '', description: '', category: '', icon: '' });
+    setIsDialogOpen(true);
+  };
+
   const toolsByCategory = filteredTools.reduce((acc, tool) => {
     const category = tool.category || 'Outros';
     if (!acc[category]) {
@@ -204,87 +210,89 @@ export default function Tools() {
           <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
             <SearchBar onSearch={handleSearch} placeholder="Pesquisar ferramentas..." />
             
-            <Dialog open={isDialogOpen} onOpenChange={closeDialog}>
-              <DialogTrigger asChild>
-                <Button className="bg-saas-red hover:bg-saas-red-dark text-white">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nova Ferramenta
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-saas-black-light border-saas-gray/20">
-                <DialogHeader>
-                  <DialogTitle className="text-white">
-                    {editingTool ? 'Editar Ferramenta' : 'Criar Nova Ferramenta'}
-                  </DialogTitle>
-                  <DialogDescription className="text-gray-400">
-                    {editingTool ? 'Edite as informações da ferramenta.' : 'Adicione uma nova ferramenta ao seu arsenal.'}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="tool-name" className="text-gray-300">Nome</Label>
-                    <Input
-                      id="tool-name"
-                      placeholder="Ex: N8N, Uptime Kuma, etc."
-                      value={newTool.name}
-                      onChange={(e) => setNewTool(prev => ({ ...prev, name: e.target.value }))}
-                      className="bg-saas-black border-saas-gray/20 text-white"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="tool-url" className="text-gray-300">URL</Label>
-                    <Input
-                      id="tool-url"
-                      placeholder="https://exemplo.com"
-                      value={newTool.url}
-                      onChange={(e) => setNewTool(prev => ({ ...prev, url: e.target.value }))}
-                      className="bg-saas-black border-saas-gray/20 text-white"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="tool-category" className="text-gray-300">Categoria</Label>
-                    <Select
-                      value={newTool.category}
-                      onValueChange={(value) => setNewTool(prev => ({ ...prev, category: value }))}
-                    >
-                      <SelectTrigger className="bg-saas-black border-saas-gray/20 text-white">
-                        <SelectValue placeholder="Selecione uma categoria" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-saas-black-light border-saas-gray/20">
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category} className="text-white">
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="tool-description" className="text-gray-300">Descrição (opcional)</Label>
-                    <Textarea
-                      id="tool-description"
-                      placeholder="Descrição da ferramenta"
-                      value={newTool.description}
-                      onChange={(e) => setNewTool(prev => ({ ...prev, description: e.target.value }))}
-                      className="bg-saas-black border-saas-gray/20 text-white"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={closeDialog} className="border-saas-gray/20 text-gray-300">
-                    Cancelar
-                  </Button>
-                  <Button 
-                    onClick={editingTool ? updateTool : createTool} 
-                    className="bg-saas-red hover:bg-saas-red-dark text-white"
-                  >
-                    {editingTool ? 'Atualizar' : 'Criar'} Ferramenta
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button 
+              onClick={openCreateDialog}
+              className="bg-saas-red hover:bg-saas-red-dark text-white"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Ferramenta
+            </Button>
           </div>
         </div>
+
+        <Dialog open={isDialogOpen} onOpenChange={closeDialog}>
+          <DialogContent className="bg-saas-black-light border-saas-gray/20">
+            <DialogHeader>
+              <DialogTitle className="text-white">
+                {editingTool ? 'Editar Ferramenta' : 'Criar Nova Ferramenta'}
+              </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                {editingTool ? 'Edite as informações da ferramenta.' : 'Adicione uma nova ferramenta ao seu arsenal.'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="tool-name" className="text-gray-300">Nome</Label>
+                <Input
+                  id="tool-name"
+                  placeholder="Ex: N8N, Uptime Kuma, etc."
+                  value={newTool.name}
+                  onChange={(e) => setNewTool(prev => ({ ...prev, name: e.target.value }))}
+                  className="bg-saas-black border-saas-gray/20 text-white"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="tool-url" className="text-gray-300">URL</Label>
+                <Input
+                  id="tool-url"
+                  placeholder="https://exemplo.com"
+                  value={newTool.url}
+                  onChange={(e) => setNewTool(prev => ({ ...prev, url: e.target.value }))}
+                  className="bg-saas-black border-saas-gray/20 text-white"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="tool-category" className="text-gray-300">Categoria</Label>
+                <Select
+                  value={newTool.category}
+                  onValueChange={(value) => setNewTool(prev => ({ ...prev, category: value }))}
+                >
+                  <SelectTrigger className="bg-saas-black border-saas-gray/20 text-white">
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-saas-black-light border-saas-gray/20">
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category} className="text-white">
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="tool-description" className="text-gray-300">Descrição (opcional)</Label>
+                <Textarea
+                  id="tool-description"
+                  placeholder="Descrição da ferramenta"
+                  value={newTool.description}
+                  onChange={(e) => setNewTool(prev => ({ ...prev, description: e.target.value }))}
+                  className="bg-saas-black border-saas-gray/20 text-white"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={closeDialog} className="border-saas-gray/20 text-gray-300">
+                Cancelar
+              </Button>
+              <Button 
+                onClick={editingTool ? updateTool : createTool} 
+                className="bg-saas-red hover:bg-saas-red-dark text-white"
+              >
+                {editingTool ? 'Atualizar' : 'Criar'} Ferramenta
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Tools by Category */}
         <div className="space-y-8">
@@ -296,7 +304,7 @@ export default function Tools() {
                   <h3 className="text-lg font-semibold text-white mb-2">Nenhuma ferramenta encontrada</h3>
                   <p className="text-gray-400 mb-4">Comece adicionando suas primeiras ferramentas</p>
                   <Button 
-                    onClick={() => setIsDialogOpen(true)}
+                    onClick={openCreateDialog}
                     className="bg-saas-red hover:bg-saas-red-dark text-white"
                   >
                     <Plus className="mr-2 h-4 w-4" />
