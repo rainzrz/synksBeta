@@ -99,14 +99,14 @@ class ApiClient {
     return this.request<any>(`/companies/${id}`);
   }
 
-  async createCompany(company: { name: string; description?: string }) {
+  async createCompany(company: { name: string; description?: string; website?: string }) {
     return this.request<any>('/companies', {
       method: 'POST',
       body: JSON.stringify(company),
     });
   }
 
-  async updateCompany(id: string, company: { name: string; description?: string }) {
+  async updateCompany(id: string, company: { name: string; description?: string; website?: string }) {
     return this.request<any>(`/companies/${id}`, {
       method: 'PUT',
       body: JSON.stringify(company),

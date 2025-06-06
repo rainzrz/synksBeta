@@ -16,12 +16,13 @@ import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Building2, Plus, ExternalLink, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { Company } from '@/types';
+import { Company, Link, DashboardStats } from '@/types';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [links, setLinks] = useState<Link[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -34,7 +35,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      loadCompanies();
+      loadData();
     }
   }, [user]);
 
@@ -42,19 +43,54 @@ export default function Dashboard() {
     setFilteredCompanies(companies);
   }, [companies]);
 
-  const loadCompanies = async () => {
+  const loadData = async () => {
     try {
-      const response = await apiClient.getCompanies();
-      if (response.error) {
-        throw new Error(response.error);
+      const [companiesResponse, linksResponse] = await Promise.all([
+        apiClient.getCompanies(),
+        apiClient.getLinks()
+      ]);
+      
+      if (companiesResponse.error) {
+        throw new Error(companiesResponse.error);
       }
-      setCompanies(response.data || []);
+      if (linksResponse.error) {
+        throw new Error(linksResponse.error);
+      }
+      
+      setCompanies(companiesResponse.data || []);
+      setLinks(linksResponse.data || []);
     } catch (error) {
-      console.error('Error loading companies:', error);
-      toast.error('Erro ao carregar empresas');
+      console.error('Error loading data:', error);
+      toast.error('Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateStats = (): DashboardStats => {
+    const totalLinks = links.length;
+    const onlineLinks = links.filter(l => l.status === 'online').length;
+    const offlineLinks = links.filter(l => l.status === 'offline').length;
+    const errorLinks = links.filter(l => l.status === 'error').length;
+    const pendingLinks = links.filter(l => l.status === 'pending').length;
+    
+    const responseTimes = links
+      .filter(l => l.response_time && l.status === 'online')
+      .map(l => l.response_time!);
+    
+    const averageResponseTime = responseTimes.length > 0 
+      ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
+      : 0;
+
+    return {
+      totalCompanies: companies.length,
+      totalLinks,
+      onlineLinks,
+      offlineLinks,
+      errorLinks,
+      pendingLinks,
+      averageResponseTime
+    };
   };
 
   const handleSearch = (query: string) => {
@@ -95,7 +131,7 @@ export default function Dashboard() {
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status?: string) => {
     switch (status) {
       case 'online':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
@@ -108,7 +144,7 @@ export default function Dashboard() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
     switch (status) {
       case 'online':
         return 'border-l-green-500';
@@ -132,6 +168,8 @@ export default function Dashboard() {
     );
   }
 
+  const stats = calculateStats();
+
   return (
     <div className="min-h-screen bg-saas-black">
       <Navbar />
@@ -142,8 +180,8 @@ export default function Dashboard() {
           <p className="text-gray-400">Monitore o status de todos os seus sites</p>
         </div>
 
-        <QuickStats />
-        <DashboardCharts />
+        <QuickStats stats={stats} />
+        <DashboardCharts companies={companies} links={links} />
         <MonitoringControls />
 
         <div className="mt-8">
@@ -238,7 +276,7 @@ export default function Dashboard() {
               {filteredCompanies.map((company) => (
                 <Card 
                   key={company.id}
-                  className={`bg-saas-black-light border-saas-gray/20 border-l-4 ${getStatusColor(company.status || 'unknown')} hover:border-saas-red/50 transition-colors cursor-pointer`}
+                  className={`bg-saas-black-light border-saas-gray/20 border-l-4 ${getStatusColor(company.status)} hover:border-saas-red/50 transition-colors cursor-pointer`}
                   onClick={() => navigate(`/company/${company.id}`)}
                 >
                   <CardHeader className="pb-3">
@@ -252,7 +290,7 @@ export default function Dashboard() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 ml-2">
-                        {getStatusIcon(company.status || 'unknown')}
+                        {getStatusIcon(company.status)}
                         {company.website && (
                           <Button
                             size="sm"
