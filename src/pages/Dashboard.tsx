@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -613,7 +612,7 @@ export default function Dashboard() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
-              <Globe className="h-6 w-6" />
+              <Globe className="h-6 w-6 text-red-500" />
               Links com Problemas ({problematicLinks.length})
             </h2>
           </div>
@@ -623,7 +622,7 @@ export default function Dashboard() {
               <CardContent className="p-8">
                 <div className="text-center">
                   <Globe className="h-12 w-12 text-green-400 mx-auto mb-4" />
-                  <p className="text-gray-400 mb-4">Todos os links estão funcionando! 🎉</p>
+                  <p className="text-gray-400 mb-4">Todos os links estão funcionando!</p>
                 </div>
               </CardContent>
             </Card>

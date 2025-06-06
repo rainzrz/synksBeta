@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { 
@@ -178,9 +177,6 @@ const Landing = () => {
                   Criar Conta Gratuita
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="border-saas-red text-white hover:bg-saas-red/10 px-8 py-6 text-lg">
-                Ver Demo
-              </Button>
             </div>
           </div>
         </div>
