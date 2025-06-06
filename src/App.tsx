@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,13 +21,33 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const [showInitialScreen, setShowInitialScreen] = useState(true);
+  const [showInitialScreen, setShowInitialScreen] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuthStatus = () => {
+      const token = localStorage.getItem('token');
+      
+      // Only show initial screen if there's no token (user not logged in)
+      if (!token) {
+        setShowInitialScreen(true);
+      }
+      
+      setIsChecking(false);
+    };
+
+    checkAuthStatus();
+  }, []);
 
   const handleInitialScreenComplete = () => {
     setShowInitialScreen(false);
     navigate('/');
   };
+
+  if (isChecking) {
+    return null; // or a loading spinner
+  }
 
   if (showInitialScreen) {
     return <InitialScreen onComplete={handleInitialScreenComplete} />;
