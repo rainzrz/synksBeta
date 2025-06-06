@@ -22,26 +22,13 @@ Avatar.displayName = AvatarPrimitive.Root.displayName
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
->(({ className, src, ...props }, ref) => {
-  // Build the absolute URL for the image
-  let imageUrl = src;
-  
-  if (src && src.startsWith('/uploads/')) {
-    const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : window.location.origin;
-    imageUrl = `${baseUrl}${src}`;
-  }
-
-  console.log('Avatar image URL:', imageUrl);
-
-  return (
-    <AvatarPrimitive.Image
-      ref={ref}
-      src={imageUrl}
-      className={cn("aspect-square h-full w-full", className)}
-      {...props}
-    />
-  );
-})
+>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Image
+    ref={ref}
+    className={cn("aspect-square h-full w-full", className)}
+    {...props}
+  />
+))
 AvatarImage.displayName = AvatarPrimitive.Image.displayName
 
 const AvatarFallback = React.forwardRef<

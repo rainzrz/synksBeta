@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
@@ -7,11 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Camera, Loader2, Upload } from 'lucide-react';
-import { useFileUpload } from '@/hooks/useFileUpload';
+import { Camera, Loader2, Link } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -22,13 +22,14 @@ interface Profile {
 export default function Profile() {
   const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { uploadFile, uploading } = useFileUpload();
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [updatingAvatar, setUpdatingAvatar] = useState(false);
+  const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -86,28 +87,29 @@ export default function Profile() {
     }
   };
 
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleAvatarUpdate = async () => {
+    if (!avatarUrl.trim()) {
+      toast.error('Por favor, insira uma URL válida');
+      return;
+    }
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    setUpdatingAvatar(true);
 
     try {
-      const avatarUrl = await uploadFile(file);
-      if (avatarUrl) {
-        const response = await apiClient.updateProfile({ avatar_url: avatarUrl });
-        if (response.error) {
-          throw new Error(response.error);
-        }
-        
-        setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
-        toast.success('Foto atualizada com sucesso!');
+      const response = await apiClient.updateProfile({ avatar_url: avatarUrl });
+      if (response.error) {
+        throw new Error(response.error);
       }
+      
+      setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
+      setAvatarDialogOpen(false);
+      setAvatarUrl('');
+      toast.success('Foto atualizada com sucesso!');
     } catch (error) {
       console.error('Error updating avatar:', error);
       toast.error('Erro ao atualizar foto');
+    } finally {
+      setUpdatingAvatar(false);
     }
   };
 
@@ -195,46 +197,71 @@ export default function Profile() {
                 {/* Avatar */}
                 <div className="flex items-center space-x-6">
                   <div className="relative">
-                    <Avatar className="h-20 w-20 cursor-pointer" onClick={handleAvatarClick}>
+                    <Avatar className="h-20 w-20">
                       <AvatarImage src={profile?.avatar_url || ''} />
                       <AvatarFallback className="bg-saas-red text-white text-lg">
                         {profile?.name ? getInitials(profile.name) : 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    {uploading && (
-                      <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                        <Loader2 className="h-6 w-6 animate-spin text-white" />
-                      </div>
-                    )}
                   </div>
                   <div>
-                    <Button
-                      onClick={handleAvatarClick}
-                      disabled={uploading}
-                      className="bg-saas-red hover:bg-saas-red-dark text-white"
-                    >
-                      {uploading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Fazendo upload...
-                        </>
-                      ) : (
-                        <>
-                          <Camera className="mr-2 h-4 w-4" />
+                    <Dialog open={avatarDialogOpen} onOpenChange={setAvatarDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="bg-saas-red hover:bg-saas-red-dark text-white">
+                          <Link className="mr-2 h-4 w-4" />
                           Alterar Foto
-                        </>
-                      )}
-                    </Button>
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-saas-black-light border-saas-gray/20">
+                        <DialogHeader>
+                          <DialogTitle className="text-white">Alterar Foto do Perfil</DialogTitle>
+                          <DialogDescription className="text-gray-400">
+                            Insira a URL da imagem que deseja usar como foto de perfil
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="avatar-url" className="text-gray-300">URL da Imagem</Label>
+                            <Input
+                              id="avatar-url"
+                              value={avatarUrl}
+                              onChange={(e) => setAvatarUrl(e.target.value)}
+                              placeholder="https://exemplo.com/minha-foto.jpg"
+                              className="bg-saas-black border-saas-gray/20 text-white"
+                            />
+                          </div>
+                          {avatarUrl && (
+                            <div className="flex justify-center">
+                              <Avatar className="h-16 w-16">
+                                <AvatarImage src={avatarUrl} />
+                                <AvatarFallback className="bg-saas-red text-white">
+                                  Preview
+                                </AvatarFallback>
+                              </Avatar>
+                            </div>
+                          )}
+                        </div>
+                        <DialogFooter>
+                          <Button
+                            onClick={handleAvatarUpdate}
+                            disabled={updatingAvatar || !avatarUrl.trim()}
+                            className="bg-saas-red hover:bg-saas-red-dark text-white"
+                          >
+                            {updatingAvatar ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Atualizando...
+                              </>
+                            ) : (
+                              'Salvar Foto'
+                            )}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                     <p className="text-xs text-gray-500 mt-1">
-                      Clique para alterar sua foto de perfil
+                      Clique para adicionar URL da sua foto de perfil
                     </p>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
                   </div>
                 </div>
 
