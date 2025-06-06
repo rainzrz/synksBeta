@@ -1,13 +1,19 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { User, Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { apiClient } from '@/lib/api';
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  avatar_url?: string;
+}
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
+  session: { access_token: string } | null;
   isLoading: boolean;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -19,90 +25,99 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<{ access_token: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Check for existing token on mount
+    const token = localStorage.getItem('token');
+    if (token) {
+      apiClient.setToken(token);
+      loadUserProfile();
+    } else {
       setIsLoading(false);
-    });
+    }
+  }, []);
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-
-      if (event === 'SIGNED_IN') {
-        navigate('/dashboard');
-        toast.success('Login realizado com sucesso!');
+  const loadUserProfile = async () => {
+    try {
+      const response = await apiClient.getProfile();
+      if (response.data) {
+        setUser(response.data);
+        setSession({ access_token: localStorage.getItem('token') || '' });
+      } else {
+        // Token is invalid, clear it
+        apiClient.clearToken();
       }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      apiClient.clearToken();
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const signUp = async (email: string, password: string, name: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name: name,
-        },
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
-
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success('Conta criada! Verifique seu email para confirmar.');
+    const response = await apiClient.register(email, password, name);
+    
+    if (response.error) {
+      toast.error(response.error);
+      return { error: response.error };
     }
 
-    return { error };
+    if (response.data) {
+      apiClient.setToken(response.data.token);
+      setUser(response.data.user);
+      setSession({ access_token: response.data.token });
+      navigate('/dashboard');
+      toast.success('Conta criada com sucesso!');
+    }
+
+    return { error: null };
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      toast.error(error.message);
+    const response = await apiClient.login(email, password);
+    
+    if (response.error) {
+      toast.error(response.error);
+      return { error: response.error };
     }
 
-    return { error };
+    if (response.data) {
+      apiClient.setToken(response.data.token);
+      setUser(response.data.user);
+      setSession({ access_token: response.data.token });
+      navigate('/dashboard');
+      toast.success('Login realizado com sucesso!');
+    }
+
+    return { error: null };
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    apiClient.clearToken();
+    setUser(null);
+    setSession(null);
     navigate('/');
     toast.success('Logout realizado com sucesso!');
   };
 
   const updateProfile = async (updates: { name?: string; avatar_url?: string }) => {
-    if (!user) return { error: 'Usuário não autenticado' };
-
-    const { error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', user.id);
-
-    if (error) {
+    const response = await apiClient.updateProfile(updates);
+    
+    if (response.error) {
       toast.error('Erro ao atualizar perfil');
-    } else {
+      return { error: response.error };
+    }
+
+    if (response.data) {
+      setUser(response.data);
       toast.success('Perfil atualizado com sucesso!');
     }
 
-    return { error };
+    return { error: null };
   };
 
   return (

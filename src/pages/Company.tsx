@@ -1,11 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ArrowLeft, Globe, ExternalLink, Edit2, Trash2, Plus, Loader2 } from 'lucide-react';
@@ -13,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { apiClient } from '@/lib/api';
 
 interface Company {
   id: string;
@@ -59,30 +58,19 @@ export default function Company() {
       setLoading(true);
       
       // Load company
-      const { data: companyData, error: companyError } = await supabase
-        .from('companies')
-        .select('*')
-        .eq('id', id)
-        .eq('user_id', user?.id)
-        .single();
-
-      if (companyError) throw companyError;
+      const companyResponse = await apiClient.getCompany(id!);
+      if (companyResponse.error) {
+        throw new Error(companyResponse.error);
+      }
 
       // Load company links
-      const { data: linksData, error: linksError } = await supabase
-        .from('links')
-        .select('*')
-        .eq('company_id', id)
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+      const linksResponse = await apiClient.getCompanyLinks(id!);
+      if (linksResponse.error) {
+        throw new Error(linksResponse.error);
+      }
 
-      if (linksError) throw linksError;
-
-      setCompany(companyData);
-      setLinks((linksData || []).map(link => ({
-        ...link,
-        status: link.status as 'online' | 'offline' | 'error' | 'pending'
-      })));
+      setCompany(companyResponse.data);
+      setLinks(linksResponse.data || []);
     } catch (error) {
       console.error('Error loading company data:', error);
       toast.error('Erro ao carregar dados da empresa');
@@ -113,24 +101,18 @@ export default function Company() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('links')
-        .insert({
-          name: linkForm.name,
-          url: linkForm.url,
-          description: linkForm.description || null,
-          company_id: id,
-          user_id: user?.id
-        })
-        .select()
-        .single();
+      const response = await apiClient.createLink({
+        name: linkForm.name,
+        url: linkForm.url,
+        description: linkForm.description || undefined,
+        company_id: id!
+      });
 
-      if (error) throw error;
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
-      setLinks(prev => [{
-        ...data,
-        status: data.status as 'online' | 'offline' | 'error' | 'pending'
-      }, ...prev]);
+      setLinks(prev => [response.data, ...prev]);
       setLinkForm({ name: '', url: '', description: '' });
       setShowLinkDialog(false);
       toast.success('Link criado com sucesso!');
@@ -149,25 +131,18 @@ export default function Company() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('links')
-        .update({
-          name: linkForm.name,
-          url: linkForm.url,
-          description: linkForm.description || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', editingLink.id)
-        .select()
-        .single();
+      const response = await apiClient.updateLink(editingLink.id, {
+        name: linkForm.name,
+        url: linkForm.url,
+        description: linkForm.description || undefined
+      });
 
-      if (error) throw error;
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
       setLinks(prev => prev.map(link => 
-        link.id === editingLink.id ? {
-          ...data,
-          status: data.status as 'online' | 'offline' | 'error' | 'pending'
-        } : link
+        link.id === editingLink.id ? response.data : link
       ));
       setEditingLink(null);
       setLinkForm({ name: '', url: '', description: '' });
@@ -183,12 +158,10 @@ export default function Company() {
     if (!confirm(`Tem certeza que deseja excluir o link "${link.name}"?`)) return;
 
     try {
-      const { error } = await supabase
-        .from('links')
-        .delete()
-        .eq('id', link.id);
-
-      if (error) throw error;
+      const response = await apiClient.deleteLink(link.id);
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
       setLinks(prev => prev.filter(l => l.id !== link.id));
       toast.success('Link excluído com sucesso!');

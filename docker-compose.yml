@@ -1,0 +1,53 @@
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: monitor_postgres
+    environment:
+      POSTGRES_DB: monitor_links
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - monitor_network
+
+  # Backend API
+  backend:
+    build: ./backend
+    container_name: monitor_backend
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/monitor_links
+      JWT_SECRET: seu_jwt_secret_super_seguro_aqui
+      PORT: 3001
+    depends_on:
+      - postgres
+    ports:
+      - "3001:3001"
+    networks:
+      - monitor_network
+
+  # Frontend
+  frontend:
+    build: .
+    container_name: monitor_frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - monitor_network
+
+volumes:
+  postgres_data:
+
+networks:
+  monitor_network:
+    driver: bridge
