@@ -19,6 +19,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: { name?: string; avatar_url?: string }) => Promise<{ error: any }>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,6 +56,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       apiClient.clearToken();
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const refreshUser = async () => {
+    try {
+      const response = await apiClient.getProfile();
+      if (response.data) {
+        setUser(response.data);
+      }
+    } catch (error) {
+      console.error('Error refreshing user:', error);
     }
   };
 
@@ -130,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signOut,
         updateProfile,
+        refreshUser,
       }}
     >
       {children}

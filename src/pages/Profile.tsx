@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -20,7 +19,7 @@ interface Profile {
 }
 
 export default function Profile() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, refreshUser } = useAuth();
   const navigate = useNavigate();
   
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -78,6 +77,7 @@ export default function Profile() {
       }
 
       setProfile(prev => prev ? { ...prev, name: formData.name } : null);
+      await refreshUser();
       toast.success('Perfil atualizado com sucesso!');
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -102,6 +102,7 @@ export default function Profile() {
       }
       
       setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
+      await refreshUser();
       setAvatarDialogOpen(false);
       setAvatarUrl('');
       toast.success('Foto atualizada com sucesso!');
