@@ -1,3 +1,4 @@
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -11,9 +12,13 @@ router.post('/register', async (req, res) => {
   try {
     const { email, password, name } = req.body;
     
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: 'Email, password and name are required' });
+    }
+    
     // Check if user already exists
     const existingUser = await pool.query(
-      'SELECT id FROM profiles WHERE id = (SELECT id FROM auth.users WHERE email = $1)',
+      'SELECT id FROM profiles WHERE email = $1',
       [email]
     );
     
@@ -24,7 +29,7 @@ router.post('/register', async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Create user (simplified - in real app you'd use proper auth system)
+    // Create user
     const userResult = await pool.query(
       'INSERT INTO profiles (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email',
       [name, email, hashedPassword]
@@ -57,6 +62,10 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
     
     // Find user
     const result = await pool.query(
