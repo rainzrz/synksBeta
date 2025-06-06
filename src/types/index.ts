@@ -1,11 +1,8 @@
+
 export interface Company {
   id: string;
   name: string;
   description: string | null;
-  website?: string | null;
-  status?: 'online' | 'offline' | 'warning' | 'unknown';
-  link_count?: number;
-  last_check?: string | null;
   user_id: string;
   created_at: string;
   updated_at: string;

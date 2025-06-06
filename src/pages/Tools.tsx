@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -313,25 +314,28 @@ export default function Tools() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {categoryTools.map((tool) => (
-                    <Card key={tool.id} className="bg-saas-black-light border-saas-gray/20 hover:border-saas-red/50 transition-colors">
-                      <CardHeader className="pb-3">
-                        <div className="flex justify-between items-start">
+                    <Card key={tool.id} className="bg-saas-black-light border-saas-gray/20">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-3">
                           <div className="flex-1 min-w-0">
-                            <CardTitle className="font-medium text-white truncate text-lg">{tool.name}</CardTitle>
+                            <h4 className="font-medium text-white truncate">{tool.name}</h4>
                             <a 
                               href={tool.url} 
                               target="_blank" 
                               rel="noopener noreferrer" 
-                              className="text-sm text-blue-400 hover:underline truncate block mt-1"
+                              className="text-xs text-blue-400 hover:underline truncate block mt-1"
                             >
                               {tool.url}
                             </a>
+                            {tool.description && (
+                              <p className="text-xs text-gray-400 mt-1 line-clamp-2">{tool.description}</p>
+                            )}
                           </div>
                           <div className="flex gap-1 ml-2">
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-7 w-7 p-0 text-gray-400 hover:text-white"
+                              className="h-6 w-6 p-0 text-gray-400 hover:text-white"
                               onClick={() => window.open(tool.url, '_blank')}
                             >
                               <ExternalLink className="h-3 w-3" />
@@ -339,7 +343,7 @@ export default function Tools() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-7 w-7 p-0 text-blue-400 hover:text-blue-300"
+                              className="h-6 w-6 p-0 text-blue-400 hover:text-blue-300"
                               onClick={() => openEditDialog(tool)}
                             >
                               <Edit className="h-3 w-3" />
@@ -347,19 +351,14 @@ export default function Tools() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-7 w-7 p-0 text-red-400 hover:text-red-300"
+                              className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
                               onClick={() => deleteTool(tool.id)}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
                         </div>
-                      </CardHeader>
-                      {tool.description && (
-                        <CardContent className="pt-0">
-                          <p className="text-sm text-gray-400 line-clamp-2">{tool.description}</p>
-                        </CardContent>
-                      )}
+                      </CardContent>
                     </Card>
                   ))}
                 </div>
