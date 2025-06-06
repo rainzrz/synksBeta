@@ -5,7 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import InitialScreen from "@/components/InitialScreen";
 
@@ -21,7 +21,8 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const [showInitialScreen, setShowInitialScreen] = useState(true);
+  const { user, isLoading } = useAuth();
+  const [showInitialScreen, setShowInitialScreen] = useState(!user && !localStorage.getItem('token'));
   const navigate = useNavigate();
 
   const handleInitialScreenComplete = () => {
@@ -29,52 +30,51 @@ const AppContent = () => {
     navigate('/');
   };
 
-  if (showInitialScreen) {
+  // Show initial screen only if user is not logged in and no token exists
+  if (showInitialScreen && !user && !localStorage.getItem('token') && !isLoading) {
     return <InitialScreen onComplete={handleInitialScreenComplete} />;
   }
 
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Auth />} />
-        <Route path="/auth" element={<Auth />} />
-        
-        {/* Protected Routes */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/company/:id" element={
-          <ProtectedRoute>
-            <Company />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/tools" element={
-          <ProtectedRoute>
-            <Tools />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        } />
-        
-        {/* Catch-all route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AuthProvider>
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Auth />} />
+      <Route path="/auth" element={<Auth />} />
+      
+      {/* Protected Routes */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/company/:id" element={
+        <ProtectedRoute>
+          <Company />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/tools" element={
+        <ProtectedRoute>
+          <Tools />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <Settings />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
+      
+      {/* Catch-all route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
 
@@ -85,7 +85,9 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AppContent />
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
