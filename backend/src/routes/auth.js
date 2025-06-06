@@ -31,7 +31,7 @@ router.post('/register', async (req, res) => {
     
     // Create user
     const userResult = await pool.query(
-      'INSERT INTO profiles (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email',
+      'INSERT INTO profiles (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email, avatar_url',
       [name, email, hashedPassword]
     );
     
@@ -48,7 +48,8 @@ router.post('/register', async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name
+        name: user.name,
+        avatar_url: user.avatar_url
       },
       token
     });
@@ -67,9 +68,9 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
     
-    // Find user
+    // Find user with avatar_url
     const result = await pool.query(
-      'SELECT id, email, name, password_hash FROM profiles WHERE email = $1',
+      'SELECT id, email, name, password_hash, avatar_url FROM profiles WHERE email = $1',
       [email]
     );
     
@@ -96,7 +97,8 @@ router.post('/login', async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name
+        name: user.name,
+        avatar_url: user.avatar_url
       },
       token
     });

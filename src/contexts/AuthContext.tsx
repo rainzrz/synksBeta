@@ -80,8 +80,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (response.data) {
       apiClient.setToken(response.data.token);
-      setUser(response.data.user);
-      setSession({ access_token: response.data.token });
+      // After setting token, load complete profile data
+      await loadUserProfile();
       navigate('/dashboard');
       toast.success('Conta criada com sucesso!');
     }
@@ -99,8 +99,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (response.data) {
       apiClient.setToken(response.data.token);
-      setUser(response.data.user);
-      setSession({ access_token: response.data.token });
+      // After setting token, load complete profile data including avatar_url
+      await loadUserProfile();
       navigate('/dashboard');
       toast.success('Login realizado com sucesso!');
     }
