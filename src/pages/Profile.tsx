@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Camera, Loader2 } from 'lucide-react';
+import { Camera, Loader2, Upload } from 'lucide-react';
+import { useFileUpload } from '@/hooks/useFileUpload';
 
 interface Profile {
   id: string;
@@ -21,10 +22,13 @@ interface Profile {
 export default function Profile() {
   const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadFile, uploading } = useFileUpload();
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -82,6 +86,74 @@ export default function Profile() {
     }
   };
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const avatarUrl = await uploadFile(file);
+      if (avatarUrl) {
+        const response = await apiClient.updateProfile({ avatar_url: avatarUrl });
+        if (response.error) {
+          throw new Error(response.error);
+        }
+        
+        setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
+        toast.success('Foto atualizada com sucesso!');
+      }
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      toast.error('Erro ao atualizar foto');
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
+      toast.error('Todos os campos de senha são obrigatórios');
+      return;
+    }
+
+    if (formData.newPassword !== formData.confirmPassword) {
+      toast.error('Nova senha e confirmação não coincidem');
+      return;
+    }
+
+    if (formData.newPassword.length < 6) {
+      toast.error('Nova senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      const response = await apiClient.changePassword({
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      });
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      setFormData(prev => ({ 
+        ...prev, 
+        currentPassword: '', 
+        newPassword: '', 
+        confirmPassword: '' 
+      }));
+      toast.success('Senha alterada com sucesso!');
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast.error('Erro ao alterar senha. Verifique sua senha atual.');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -123,25 +195,46 @@ export default function Profile() {
                 {/* Avatar */}
                 <div className="flex items-center space-x-6">
                   <div className="relative">
-                    <Avatar className="h-20 w-20">
+                    <Avatar className="h-20 w-20 cursor-pointer" onClick={handleAvatarClick}>
                       <AvatarImage src={profile?.avatar_url || ''} />
                       <AvatarFallback className="bg-saas-red text-white text-lg">
                         {profile?.name ? getInitials(profile.name) : 'U'}
                       </AvatarFallback>
                     </Avatar>
+                    {uploading && (
+                      <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-white" />
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Button
-                      variant="outline"
-                      disabled
-                      className="border-saas-gray/20 text-gray-500 cursor-not-allowed"
+                      onClick={handleAvatarClick}
+                      disabled={uploading}
+                      className="bg-saas-red hover:bg-saas-red-dark text-white"
                     >
-                      <Camera className="mr-2 h-4 w-4" />
-                      Upload de foto não disponível
+                      {uploading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Fazendo upload...
+                        </>
+                      ) : (
+                        <>
+                          <Camera className="mr-2 h-4 w-4" />
+                          Alterar Foto
+                        </>
+                      )}
                     </Button>
                     <p className="text-xs text-gray-500 mt-1">
-                      Funcionalidade em desenvolvimento
+                      Clique para alterar sua foto de perfil
                     </p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
                   </div>
                 </div>
 
@@ -189,7 +282,7 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle className="text-white">Alterar Senha</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Funcionalidade em desenvolvimento
+                  Altere sua senha de acesso
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -201,7 +294,6 @@ export default function Profile() {
                     value={formData.currentPassword}
                     onChange={(e) => setFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
                     className="bg-saas-black border-saas-gray/20 text-white"
-                    disabled
                   />
                 </div>
 
@@ -213,7 +305,6 @@ export default function Profile() {
                     value={formData.newPassword}
                     onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
                     className="bg-saas-black border-saas-gray/20 text-white"
-                    disabled
                   />
                 </div>
 
@@ -225,15 +316,22 @@ export default function Profile() {
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     className="bg-saas-black border-saas-gray/20 text-white"
-                    disabled
                   />
                 </div>
 
                 <Button 
-                  disabled
-                  className="bg-gray-500 cursor-not-allowed text-white"
+                  onClick={handlePasswordChange}
+                  disabled={changingPassword}
+                  className="bg-saas-red hover:bg-saas-red-dark text-white"
                 >
-                  Alterar Senha (Em desenvolvimento)
+                  {changingPassword ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Alterando...
+                    </>
+                  ) : (
+                    'Alterar Senha'
+                  )}
                 </Button>
               </CardContent>
             </Card>

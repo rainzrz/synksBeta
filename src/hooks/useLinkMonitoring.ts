@@ -1,93 +1,76 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Link, LinkStatus } from '@/types';
+import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
+
+interface Link {
+  id: string;
+  name: string;
+  url: string;
+  status: 'online' | 'offline' | 'error' | 'pending';
+  response_time: number | null;
+  last_checked: string | null;
+  company_id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useLinkMonitoring = (userId: string | undefined) => {
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [monitoringInterval, setMonitoringInterval] = useState<NodeJS.Timeout | null>(null);
 
-  const checkLinkStatus = async (link: Link): Promise<{ status: LinkStatus; responseTime: number }> => {
-    const startTime = Date.now();
-    
-    try {
-      const response = await fetch(link.url, {
-        method: 'HEAD',
-        mode: 'no-cors',
-        signal: AbortSignal.timeout(10000) // 10 second timeout
-      });
-      
-      const responseTime = Date.now() - startTime;
-      
-      if (response.ok || response.type === 'opaque') {
-        return { status: 'online', responseTime };
-      } else {
-        return { status: 'offline', responseTime };
-      }
-    } catch (error) {
-      const responseTime = Date.now() - startTime;
-      return { status: 'error', responseTime };
-    }
-  };
-
-  const updateLinkStatus = async (linkId: string, status: LinkStatus, responseTime: number) => {
-    try {
-      await supabase
-        .from('links')
-        .update({
-          status,
-          response_time: responseTime,
-          last_checked: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', linkId);
-    } catch (error) {
-      console.error('Error updating link status:', error);
-    }
-  };
-
   const checkAllLinks = useCallback(async () => {
     if (!userId) return;
 
     try {
-      const { data: linksData, error } = await supabase
-        .from('links')
-        .select('*')
-        .eq('user_id', userId);
+      console.log('Checking all links...');
+      
+      // Get all links
+      const response = await apiClient.getLinks();
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
-      if (error) throw error;
+      const links = response.data || [];
+      console.log(`Found ${links.length} links to check`);
 
-      // Type cast the data to ensure proper typing
-      const links = linksData?.map(link => ({
-        ...link,
-        status: link.status as LinkStatus
-      })) as Link[] || [];
-
+      // Check each link
       for (const link of links) {
-        const { status, responseTime } = await checkLinkStatus(link);
-        
-        // Show notification if link went offline
-        if (link.status === 'online' && status === 'offline') {
-          toast.error(`🔴 Link offline: ${link.name}`, {
-            description: `O link ${link.url} está fora do ar`,
-            duration: 5000,
-          });
+        try {
+          console.log(`Checking link: ${link.name} (${link.url})`);
+          
+          const checkResponse = await apiClient.checkLink(link.id);
+          if (checkResponse.error) {
+            console.error(`Error checking link ${link.id}:`, checkResponse.error);
+          } else {
+            console.log(`Link ${link.name} checked successfully`);
+            
+            // Show notification if link went offline
+            if (link.status === 'online' && checkResponse.data.status === 'offline') {
+              toast.error(`🔴 Link offline: ${link.name}`, {
+                description: `O link ${link.url} está fora do ar`,
+                duration: 5000,
+              });
+            }
+            
+            // Show notification if link came back online
+            if (link.status === 'offline' && checkResponse.data.status === 'online') {
+              toast.success(`🟢 Link online: ${link.name}`, {
+                description: `O link ${link.url} voltou ao ar`,
+                duration: 5000,
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`Error checking individual link ${link.id}:`, error);
         }
-        
-        // Show notification if link came back online
-        if (link.status === 'offline' && status === 'online') {
-          toast.success(`🟢 Link online: ${link.name}`, {
-            description: `O link ${link.url} voltou ao ar`,
-            duration: 5000,
-          });
-        }
-
-        await updateLinkStatus(link.id, status, responseTime);
         
         // Small delay between checks to avoid overwhelming
         await new Promise(resolve => setTimeout(resolve, 500));
       }
+      
+      console.log('Finished checking all links');
     } catch (error) {
       console.error('Error checking links:', error);
       toast.error('Erro ao verificar status dos links');
@@ -95,6 +78,8 @@ export const useLinkMonitoring = (userId: string | undefined) => {
   }, [userId]);
 
   const startMonitoring = useCallback((intervalMinutes: number = 5) => {
+    console.log(`Starting monitoring with ${intervalMinutes} minute interval`);
+    
     if (monitoringInterval) {
       clearInterval(monitoringInterval);
     }
@@ -104,6 +89,7 @@ export const useLinkMonitoring = (userId: string | undefined) => {
 
     // Set up recurring checks
     const interval = setInterval(() => {
+      console.log('Running scheduled link check...');
       checkAllLinks();
     }, intervalMinutes * 60 * 1000);
 
@@ -116,6 +102,8 @@ export const useLinkMonitoring = (userId: string | undefined) => {
   }, [checkAllLinks, monitoringInterval]);
 
   const stopMonitoring = useCallback(() => {
+    console.log('Stopping monitoring');
+    
     if (monitoringInterval) {
       clearInterval(monitoringInterval);
       setMonitoringInterval(null);

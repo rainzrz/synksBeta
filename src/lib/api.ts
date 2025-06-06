@@ -1,4 +1,3 @@
-
 const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3001/api' : '/api';
 
 interface ApiResponse<T> {
@@ -72,6 +71,25 @@ class ApiClient {
     });
   }
 
+  // Profile methods
+  async getProfile() {
+    return this.request<any>('/profile');
+  }
+
+  async updateProfile(profile: { name?: string; avatar_url?: string }) {
+    return this.request<any>('/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profile),
+    });
+  }
+
+  async changePassword(passwords: { currentPassword: string; newPassword: string }) {
+    return this.request<any>('/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify(passwords),
+    });
+  }
+
   // Companies methods
   async getCompanies() {
     return this.request<any[]>('/companies');
@@ -133,18 +151,6 @@ class ApiClient {
   async checkLink(id: string) {
     return this.request<any>(`/links/${id}/check`, {
       method: 'POST',
-    });
-  }
-
-  // Profile methods
-  async getProfile() {
-    return this.request<any>('/profile');
-  }
-
-  async updateProfile(profile: { name?: string; avatar_url?: string }) {
-    return this.request<any>('/profile', {
-      method: 'PUT',
-      body: JSON.stringify(profile),
     });
   }
 

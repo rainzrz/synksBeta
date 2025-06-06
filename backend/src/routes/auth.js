@@ -1,8 +1,8 @@
-
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -10,28 +10,41 @@ const router = express.Router();
 router.post('/register', async (req, res) => {
   try {
     const { email, password, name } = req.body;
-
-    // Check if user exists
-    const userExists = await pool.query('SELECT id FROM profiles WHERE email = $1', [email]);
-    if (userExists.rows.length > 0) {
+    
+    // Check if user already exists
+    const existingUser = await pool.query(
+      'SELECT id FROM profiles WHERE id = (SELECT id FROM auth.users WHERE email = $1)',
+      [email]
+    );
+    
+    if (existingUser.rows.length > 0) {
       return res.status(400).json({ error: 'User already exists' });
     }
-
+    
     // Hash password
-    const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
-
-    // Create user
-    const result = await pool.query(
-      'INSERT INTO profiles (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, email, name',
-      [email, passwordHash, name]
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Create user (simplified - in real app you'd use proper auth system)
+    const userResult = await pool.query(
+      'INSERT INTO profiles (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email',
+      [name, email, hashedPassword]
     );
-
-    const user = result.rows[0];
-    const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET);
-
+    
+    const user = userResult.rows[0];
+    
+    // Generate JWT
+    const token = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+    
     res.status(201).json({
-      user: { id: user.id, email: user.email, name: user.name },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name
+      },
       token
     });
   } catch (error) {
@@ -44,30 +57,82 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-
+    
     // Find user
-    const result = await pool.query('SELECT * FROM profiles WHERE email = $1', [email]);
+    const result = await pool.query(
+      'SELECT id, email, name, password_hash FROM profiles WHERE email = $1',
+      [email]
+    );
+    
     if (result.rows.length === 0) {
-      return res.status(400).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
-
+    
     const user = result.rows[0];
-
+    
     // Check password
     const validPassword = await bcrypt.compare(password, user.password_hash);
     if (!validPassword) {
-      return res.status(400).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
-
-    // Generate token
-    const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET);
-
+    
+    // Generate JWT
+    const token = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+    
     res.json({
-      user: { id: user.id, email: user.email, name: user.name },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name
+      },
       token
     });
   } catch (error) {
     console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Change password
+router.put('/change-password', authenticateToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.userId;
+    
+    // Get current user
+    const userResult = await pool.query(
+      'SELECT password_hash FROM profiles WHERE id = $1',
+      [userId]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Check current password
+    const validPassword = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+    
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Update password
+    await pool.query(
+      'UPDATE profiles SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+      [hashedNewPassword, userId]
+    );
+    
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
