@@ -12,7 +12,7 @@ mkdir -p $BACKUP_DIR
 echo "📦 Iniciando backup do banco de dados..."
 
 # Fazer backup do PostgreSQL
-docker compose exec -T postgres pg_dump -U postgres monitor_links > $BACKUP_FILE
+docker-compose exec -T postgres pg_dump -U postgres monitor_links > $BACKUP_FILE
 
 if [ $? -eq 0 ]; then
     echo "✅ Backup criado com sucesso: $BACKUP_FILE"

@@ -1,6 +1,5 @@
 
 const express = require('express');
-const fetch = require('node-fetch');
 const pool = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
@@ -109,7 +108,7 @@ router.post('/:id/check', authenticateToken, async (req, res) => {
     try {
       const response = await fetch(link.url, {
         method: 'HEAD',
-        timeout: 10000
+        signal: AbortSignal.timeout(10000)
       });
       
       const responseTime = Date.now() - startTime;
