@@ -73,7 +73,7 @@ Synks é uma plataforma completa para gerenciamento de empresas, links e ferrame
 1. Clone o repositório:
 ```bash
 git clone <repository-url>
-cd systemhaus
+cd synks
 ```
 
 2. Configure as variáveis de ambiente:
