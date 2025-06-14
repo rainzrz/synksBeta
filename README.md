@@ -1,9 +1,9 @@
 
-# SystemHaus - Plataforma de Gerenciamento de Empresas e Links
+# Synks - Plataforma de Gerenciamento de Empresas e Links
 
 ## Descrição
 
-SystemHaus é uma plataforma completa para gerenciamento de empresas, links e ferramentas. Permite monitoramento de status de links, organização de recursos por empresa e gestão centralizada de ferramentas.
+Synks é uma plataforma completa para gerenciamento de empresas, links e ferramentas. Permite monitoramento de status de links, organização de recursos por empresa e gestão centralizada de ferramentas.
 
 ## Funcionalidades
 
